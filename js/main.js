@@ -1,9 +1,14 @@
 import SceneManager from './scenes/SceneManager.js'
 import ResourceLoader from './utils/ResourceLoader.js'
 import GameConfig from './config.js'
+import Storage from './utils/Storage.js'
+import SoundManager from './utils/SoundManager.js'
+import ShareManager from './utils/ShareManager.js'
+import AdManager from './utils/AdManager.js'
 
 class GameMain {
   constructor() {
+    console.log('[GameMain] Constructor started')
     this.canvas = wx.createCanvas()
     this.ctx = this.canvas.getContext('2d')
     this.lastTime = Date.now()
@@ -15,11 +20,27 @@ class GameMain {
   }
   
   init() {
+    console.log('[GameMain] Init started')
     this.resourceLoader = new ResourceLoader()
     this.sceneManager = new SceneManager()
+    this.soundManager = new SoundManager()
+    this.shareManager = new ShareManager()
+    this.adManager = new AdManager()
     
     window.canvas = this.canvas
     window.sceneManager = this.sceneManager
+    window.soundManager = this.soundManager
+    window.shareManager = this.shareManager
+    window.adManager = this.adManager
+    window.Storage = Storage
+    if (typeof GameGlobal !== 'undefined') {
+      GameGlobal.sceneManager = this.sceneManager
+      GameGlobal.soundManager = this.soundManager
+      GameGlobal.shareManager = this.shareManager
+      GameGlobal.adManager = this.adManager
+      GameGlobal.game = this
+    }
+    console.log('[GameMain] Global variables set')
     
     this.resourceLoader.loadAll().then(() => {
       console.log('[GameMain] Resources loaded, starting game loop')
@@ -52,7 +73,6 @@ class GameMain {
       this.fps = this.frameCount
       this.frameCount = 0
       this.fpsTime = 0
-      console.log('[GameMain] FPS:', this.fps)
     }
   }
   
@@ -64,10 +84,12 @@ class GameMain {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     this.sceneManager.currentScene?.render(this.ctx)
     
-    this.ctx.fillStyle = '#00FF00'
-    this.ctx.font = '12px Arial'
-    this.ctx.textAlign = 'left'
-    this.ctx.fillText(`FPS: ${this.fps}`, 10, 20)
+    if (GameConfig.debug.showFPS) {
+      this.ctx.fillStyle = '#00FF00'
+      this.ctx.font = '12px Arial'
+      this.ctx.textAlign = 'left'
+      this.ctx.fillText(`FPS: ${this.fps}`, 10, 20)
+    }
   }
 }
 

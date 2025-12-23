@@ -1,10 +1,16 @@
 import HomeScene from './HomeScene.js'
+import PhysicsTestScene from './PhysicsTestScene.js'
+import GameScene from './GameScene.js'
+import ResultScene from './ResultScene.js'
 
 export default class SceneManager {
   constructor() {
     this.currentScene = null
     this.scenes = {
-      'home': HomeScene
+      'home': HomeScene,
+      'physicsTest': PhysicsTestScene,
+      'game': GameScene,
+      'result': ResultScene
     }
   }
   

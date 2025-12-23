@@ -17,7 +17,9 @@ const GameConfig = {
   powerUp: {
     extraBallRate: 0.15,
     bombRate: 0.05,
-    laserRate: 0.03
+    laserRate: 0.03,
+    bombRadius: 1,
+    radius: 15
   },
   
   score: {
@@ -29,6 +31,10 @@ const GameConfig = {
   screen: {
     designWidth: 375,
     designHeight: 667
+  },
+  
+  debug: {
+    showFPS: false
   }
 }
 
