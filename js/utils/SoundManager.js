@@ -24,21 +24,9 @@ class SoundManager {
   }
   
   checkSoundsReady() {
-    try {
-      const fs = wx.getFileSystemManager()
-      fs.access({
-        path: this.soundFiles.button,
-        success: () => {
-          this.soundsReady = true
-          console.log('[SoundManager] Sound files ready')
-        },
-        fail: () => {
-          this.soundsReady = false
-        }
-      })
-    } catch (e) {
-      this.soundsReady = false
-    }
+    // Sound files are optional - disable sounds if files don't exist
+    this.soundsReady = false
+    console.log('[SoundManager] Sound files not available, sounds disabled')
   }
   
   play(soundName) {

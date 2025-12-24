@@ -37,8 +37,8 @@ export default class GameScene extends Scene {
   }
   
   handleGameOver(data) {
-    if (window.sceneManager) {
-      window.sceneManager.switchTo('result', data)
+    if (GameGlobal.sceneManager) {
+      GameGlobal.sceneManager.switchTo('result', data)
     }
   }
   
@@ -53,8 +53,8 @@ export default class GameScene extends Scene {
   }
   
   goHome() {
-    if (window.sceneManager) {
-      window.sceneManager.switchTo('home')
+    if (GameGlobal.sceneManager) {
+      GameGlobal.sceneManager.switchTo('home')
     }
   }
   

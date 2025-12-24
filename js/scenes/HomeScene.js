@@ -48,15 +48,15 @@ export default class HomeScene extends Scene {
       }
       
       if (this.startBtn.contains(touch.clientX, touch.clientY)) {
-        if (window.soundManager) {
-          window.soundManager.play('button')
+        if (GameGlobal.soundManager) {
+          GameGlobal.soundManager.play('button')
         }
-        if (window.sceneManager) {
-          window.sceneManager.switchTo('game')
+        if (GameGlobal.sceneManager) {
+          GameGlobal.sceneManager.switchTo('game')
         }
       } else if (this.rankBtn.contains(touch.clientX, touch.clientY)) {
-        if (window.soundManager) {
-          window.soundManager.play('button')
+        if (GameGlobal.soundManager) {
+          GameGlobal.soundManager.play('button')
         }
         this.showRank()
       }

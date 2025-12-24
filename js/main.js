@@ -27,13 +27,9 @@ class GameMain {
     this.shareManager = new ShareManager()
     this.adManager = new AdManager()
     
-    window.canvas = this.canvas
-    window.sceneManager = this.sceneManager
-    window.soundManager = this.soundManager
-    window.shareManager = this.shareManager
-    window.adManager = this.adManager
-    window.Storage = Storage
     if (typeof GameGlobal !== 'undefined') {
+      GameGlobal.canvas = this.canvas
+      GameGlobal.Storage = Storage
       GameGlobal.sceneManager = this.sceneManager
       GameGlobal.soundManager = this.soundManager
       GameGlobal.shareManager = this.shareManager

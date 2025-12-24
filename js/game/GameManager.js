@@ -30,8 +30,8 @@ class GameManager {
   }
   
   static loadHighScore() {
-    if (window.Storage) {
-      return window.Storage.getHighScore()
+    if (GameGlobal.Storage) {
+      return GameGlobal.Storage.getHighScore()
     }
     try {
       return wx.getStorageSync('highScore') || 0
@@ -44,8 +44,8 @@ class GameManager {
     const highScore = GameManager.loadHighScore()
     if (this.score > highScore) {
       this.isNewRecord = true
-      if (window.Storage) {
-        window.Storage.setHighScore(this.score)
+      if (GameGlobal.Storage) {
+        GameGlobal.Storage.setHighScore(this.score)
       } else {
         try {
           wx.setStorageSync('highScore', this.score)
@@ -53,8 +53,8 @@ class GameManager {
           console.error('Failed to save high score:', e)
         }
       }
-      if (window.soundManager) {
-        window.soundManager.play('highscore')
+      if (GameGlobal.soundManager) {
+        GameGlobal.soundManager.play('highscore')
       }
     }
   }
@@ -123,8 +123,8 @@ class GameManager {
     this.state = 'shooting'
     this.launchedCount = 0
     
-    if (window.soundManager) {
-      window.soundManager.play('launch')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('launch')
     }
     
     let delay = 0
@@ -168,14 +168,14 @@ class GameManager {
               if (brick.hit()) {
                 this.score += GameConfig.score.perDestroy
                 this.bricks.splice(i, 1)
-                if (window.soundManager) {
-                  window.soundManager.play('destroy')
+                if (GameGlobal.soundManager) {
+                  GameGlobal.soundManager.play('destroy')
                 }
                 this.vibrate()
               } else {
                 this.score += GameConfig.score.perHit
-                if (window.soundManager) {
-                  window.soundManager.play('hit')
+                if (GameGlobal.soundManager) {
+                  GameGlobal.soundManager.play('hit')
                 }
                 this.vibrateShort()
               }
@@ -231,8 +231,8 @@ class GameManager {
     if (isOver) {
       this.state = 'gameover'
       this.saveHighScore()
-      if (window.soundManager) {
-        window.soundManager.play('gameover')
+      if (GameGlobal.soundManager) {
+        GameGlobal.soundManager.play('gameover')
       }
       this.triggerGameOver()
     }
@@ -250,8 +250,8 @@ class GameManager {
   }
   
   collectPowerUp(powerUp, index) {
-    if (window.soundManager) {
-      window.soundManager.play('powerup')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('powerup')
     }
     
     switch (powerUp.type) {
@@ -292,7 +292,7 @@ class GameManager {
   
   vibrateShort() {
     try {
-      if (window.Storage && window.Storage.isVibrationEnabled()) {
+      if (GameGlobal.Storage && GameGlobal.Storage.isVibrationEnabled()) {
         wx.vibrateShort({ type: 'light' })
       }
     } catch (e) {}
@@ -300,7 +300,7 @@ class GameManager {
   
   vibrate() {
     try {
-      if (window.Storage && window.Storage.isVibrationEnabled()) {
+      if (GameGlobal.Storage && GameGlobal.Storage.isVibrationEnabled()) {
         wx.vibrateShort({ type: 'medium' })
       }
     } catch (e) {}

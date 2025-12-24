@@ -59,15 +59,15 @@ export default class ResultScene extends Scene {
   }
   
   incrementGameCount() {
-    if (window.adManager) {
-      window.adManager.incrementGameCount()
-      window.adManager.tryShowInterstitial()
+    if (GameGlobal.adManager) {
+      GameGlobal.adManager.incrementGameCount()
+      GameGlobal.adManager.tryShowInterstitial()
     }
   }
   
   reportScore() {
-    if (window.shareManager) {
-      window.shareManager.reportScore(this.score)
+    if (GameGlobal.shareManager) {
+      GameGlobal.shareManager.reportScore(this.score)
     }
   }
   
@@ -104,39 +104,39 @@ export default class ResultScene extends Scene {
   }
   
   restartGame() {
-    if (window.soundManager) {
-      window.soundManager.play('button')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('button')
     }
-    if (window.sceneManager) {
-      window.sceneManager.switchTo('game')
+    if (GameGlobal.sceneManager) {
+      GameGlobal.sceneManager.switchTo('game')
     }
   }
   
   goHome() {
-    if (window.soundManager) {
-      window.soundManager.play('button')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('button')
     }
-    if (window.sceneManager) {
-      window.sceneManager.switchTo('home')
+    if (GameGlobal.sceneManager) {
+      GameGlobal.sceneManager.switchTo('home')
     }
   }
   
   shareScore() {
-    if (window.soundManager) {
-      window.soundManager.play('button')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('button')
     }
-    if (window.shareManager) {
-      window.shareManager.share(this.score)
+    if (GameGlobal.shareManager) {
+      GameGlobal.shareManager.share(this.score)
     }
   }
   
   watchAdToRevive() {
-    if (window.soundManager) {
-      window.soundManager.play('button')
+    if (GameGlobal.soundManager) {
+      GameGlobal.soundManager.play('button')
     }
     
-    if (window.adManager && window.adManager.isAdAvailable()) {
-      window.adManager.showRewardedAd((success) => {
+    if (GameGlobal.adManager && GameGlobal.adManager.isAdAvailable()) {
+      GameGlobal.adManager.showRewardedAd((success) => {
         if (success) {
           this.reviveGame()
         }
@@ -147,8 +147,8 @@ export default class ResultScene extends Scene {
   }
   
   reviveGame() {
-    if (window.sceneManager) {
-      window.sceneManager.switchTo('game', {
+    if (GameGlobal.sceneManager) {
+      GameGlobal.sceneManager.switchTo('game', {
         revive: true,
         score: this.score,
         round: this.round,
