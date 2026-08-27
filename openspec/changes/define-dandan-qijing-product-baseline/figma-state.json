@@ -1,0 +1,130 @@
+{
+  "runId": "dq-phase-a-attraction-rebuild-2026-08-27",
+  "fileKey": "gjKRKvGp6MMQdpG3DvXnst",
+  "fileUrl": "https://www.figma.com/design/gjKRKvGp6MMQdpG3DvXnst",
+  "phase": "phase-a-review",
+  "step": "attraction-rebuild-complete",
+  "direction": "夜游奇境 · 国风霓虹弹射",
+  "status": "complete",
+  "entities": {
+    "pages": {
+      "components": "23:3",
+      "highFidelity": "79:2"
+    },
+    "collections": {
+      "primitives": "VariableCollectionId:2:2",
+      "color": "VariableCollectionId:2:3",
+      "dimensions": "VariableCollectionId:2:4"
+    },
+    "variables": {
+      "canvas": "VariableID:155:13",
+      "arena": "VariableID:155:14",
+      "surface": "VariableID:155:15",
+      "rail": "VariableID:155:16",
+      "textPrimary": "VariableID:155:17",
+      "textSecondary": "VariableID:155:18",
+      "jade": "VariableID:155:19",
+      "cyan": "VariableID:155:20",
+      "gold": "VariableID:3:25",
+      "coral": "VariableID:155:21",
+      "overlay": "VariableID:155:22"
+    },
+    "textStyles": {
+      "logo": "S:dbdfcab05a029868400bfb2c3b1ab5d804c84dd9,",
+      "display": "S:ff2ed27962009a623dfe5e6f09c029ebbeeb569c,",
+      "score": "S:6effd33078e899c7376c2a17cfc4dab5907ace20,",
+      "target": "S:31e27e3546181544a0356cb208ef98497c409012,",
+      "cta": "S:64c5fc13f577808248b23f6ecfa6994a99d76a8b,",
+      "caption": "S:dcf51e4811eff6cfe54e0969696b53bc12b12ebb,"
+    },
+    "effectStyles": {
+      "jade": "S:66146e90d15581cfa2a9169312b9fb0e930bb0e8,",
+      "gold": "S:261359e24355799b8ebb0c8d3e7ed9e2c6f13841,",
+      "coral": "S:320bcd20e7487359c84bdf8dcf62fd7a2d341fff,",
+      "arena": "S:77e22e715dcfe972fbeacf6c0124efe4072a622d,"
+    },
+    "foundations": {
+      "root": "157:2"
+    },
+    "components": {
+      "docsRoot": "160:2",
+      "spiritMarble": "160:34",
+      "target": "161:65",
+      "hudPill": "162:20",
+      "gameCta": "163:20",
+      "chainFeedback": "164:50",
+      "encounterCard": "165:60",
+      "wechatCapsule": "128:2"
+    },
+    "screens": {
+      "V3/00 奇境首页": "171:399",
+      "V3/01 瞄准": "173:424",
+      "V3/02 普通碰撞": "180:516",
+      "V3/03 连续碰撞": "180:643",
+      "V3/04 明显连锁": "180:781",
+      "V3/05 整屏连锁": "176:461",
+      "V3/06 回合收束": "181:663",
+      "V3/07 奇遇降临": "181:786",
+      "V3/08 强化反馈": "181:842",
+      "V3/09 最终回合": "182:776",
+      "V3/10 关卡完成": "182:929"
+    },
+    "prototype": {
+      "flowName": "V3 黄金流程",
+      "startNode": "171:399",
+      "reactionCount": 10
+    }
+  },
+  "removedEntities": {
+    "screens": [
+      "129:165",
+      "130:177",
+      "134:212",
+      "134:284",
+      "134:356",
+      "135:329",
+      "136:372",
+      "140:407",
+      "141:457",
+      "145:527",
+      "142:492"
+    ],
+    "componentsAndBoards": [
+      "79:3",
+      "116:2",
+      "119:20",
+      "120:38",
+      "123:14",
+      "126:274"
+    ]
+  },
+  "pendingValidations": [
+    "extended-paths:first-entry-failure-daily-growth",
+    "user-approval:phase-a-acceptance"
+  ],
+  "completedSteps": [
+    "phase0-discovery",
+    "phase1-visual-tokens",
+    "phase2-foundations",
+    "phase3-components",
+    "phase4-benchmark-screens",
+    "phase5-golden-flow",
+    "phase6-cleanup-and-qa"
+  ],
+  "validation": {
+    "screenCount": 11,
+    "reachableScreenCount": 11,
+    "reactionCount": 10,
+    "brokenReactionDestinations": 0,
+    "mixedFontNodes": 0,
+    "missingComponentReferences": 0,
+    "unintendedScreenOverflows": 0,
+    "undersizedPrototypeHotspots": 0,
+    "wechatCapsulesPresent": 11,
+    "v2ScreenCount": 0,
+    "uniqueV3ComponentSets": 6,
+    "minimumTextSize": 11,
+    "codeConnect": "not-applicable-no-runtime-code",
+    "verifiedAt": "2026-08-27"
+  }
+}
