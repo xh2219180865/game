@@ -1,0 +1,284 @@
+{
+  "runId": "dq-phase-a-v6-battle-benchmarks-2026-09-08",
+  "fileKey": "gjKRKvGp6MMQdpG3DvXnst",
+  "fileUrl": "https://www.figma.com/design/gjKRKvGp6MMQdpG3DvXnst",
+  "phase": "phase-a-review",
+  "step": "v6-battle-benchmarks-authored-v5-full-flow-retained",
+  "direction": "夜游奇境 · 清晰弹射 · 单一主行动",
+  "status": "awaiting-user-review",
+  "activeReview": {
+    "version": "V6 battle benchmarks only",
+    "reason": "用户未认可 V5 战斗吸引力，批准先制作瞄准准备和连锁爆发两张样板",
+    "direction": "月下玉石弹射场 · 青色玉灵 · 金色实体符印 · 局部连锁反馈",
+    "status": "two-screen-visual-approved-gameplay-proposal-pending",
+    "visualApproval": {"date": "2026-09-08", "userFeedback": "设计的没问题", "scope": "V6 两张战斗样板视觉；不含完整 Phase A、数值或运行时"},
+    "pendingGameplayProposal": "../add-chain-reaction-gameplay/",
+    "fullFlowVersion": "V5 retained; existing entities and QA below describe V5",
+    "pageId": "387:2",
+    "componentPageId": "387:9",
+    "screens": {"aim": "387:7", "chainBurst": "394:35"},
+    "componentSetId": "390:2",
+    "hpProperty": "HP#390:0",
+    "variants": {"Circle/Intact": "388:2", "Circle/Cracked": "388:7", "Triangle/Intact": "388:12", "Triangle/Cracked": "388:17", "Diamond/Intact": "389:2", "Diamond/Cracked": "389:7"},
+    "assets": {"backgroundNode": "387:8", "atlasNode": "387:13", "backgroundImageHash": "365a6a8f20acf6ce297c2ce15e9df6c1d2f54753", "atlasImageHash": "2d631db0a3f3edad17179d2a615422e73f482333", "repositoryDirectory": "design-assets/v6"},
+    "hotspots": {"fire": "404:80", "replay": "404:83"},
+    "qa": {"screenCount": 2, "variantCount": 6, "sameTargetPositions": true, "targetCountPerScreen": 8, "navigationActions": 3, "invalidNavigationTargets": 0, "animatedNodes": 23, "timelineSeconds": 2, "exportVideoVerified": true, "sampleTimesSeconds": [0, 0.5, 0.7, 1.0, 1.3, 1.8], "placeholderCount": 0, "userApproved": true, "runtimeValidated": false, "prototypeTimelineAutoplayVerified": false},
+    "limits": ["只审两张样板，不自动扩展其他页面", "暂停等外围流程未在样板重接，仍参考 V5", "HP、分数及连锁为设计样例，非物理和计分实现", "图集为 RGB，Figma 使用原生矢量蒙版；运行时前需导出真透明素材", "原生时间轴已导出验证；不宣称原型播放器自动播放已验证"],
+    "reviewDocument": "figma-v6-battle-review.md",
+    "next": "先评审 add-chain-reaction-gameplay 规则提案；批准后沿用 V6 美术统一其他状态。完整 Phase A 未通过验收"
+  },
+  "scope": {
+    "runtimeImplemented": false,
+    "coreMechanic": "反弹命中耐久符印、数字归零消除、每三回合三选一；不采用同类三消",
+    "storage": "核心进度本地；仅微信官方托管数据与开放数据域用于好友周榜",
+    "weeklyReset": "每周一 00:00 Asia/Shanghai；保留永久进度",
+    "ranking": "同周同版本最好成绩，同分并列，只展示平台返回的同玩好友；示例姓名与成绩不是实际数据"
+  },
+  "entities": {
+    "pages": {
+      "experience": "322:2",
+      "components": "322:3",
+      "historicalHighFidelity": "79:2"
+    },
+    "components": {
+      "actionSet": "324:19",
+      "infoRowSet": "327:14",
+      "toggleSet": "352:2",
+      "reusedTargetSet": "212:20",
+      "reusedWechatCapsule": "128:2"
+    },
+    "screens": {
+      "home": "329:2",
+      "aim": "329:3",
+      "launch": "337:37",
+      "hit1": "337:85",
+      "hit2": "337:133",
+      "hit3": "337:181",
+      "chain": "337:229",
+      "recall": "337:277",
+      "explore": "341:151",
+      "chapters": "341:168",
+      "weekly": "341:185",
+      "leader": "341:202",
+      "win": "341:219",
+      "lose": "341:236",
+      "ability": "342:193",
+      "finalAim": "342:241",
+      "tutorial": "342:289",
+      "continueHome": "342:337",
+      "pause": "342:375",
+      "gainSplit": "346:302",
+      "weeklyResult": "346:319",
+      "collection": "346:336",
+      "scene": "346:353",
+      "settings": "346:370",
+      "data": "346:387",
+      "loading": "346:404",
+      "recovery": "346:421",
+      "consent": "357:465",
+      "leaderEmpty": "357:482",
+      "leaderError": "357:499",
+      "leaderLoading": "357:516",
+      "weekRollover": "357:533",
+      "saveError": "357:550",
+      "reset": "357:567",
+      "cloudClear": "357:584",
+      "gainEcho": "361:540",
+      "gainPierce": "361:574",
+      "finalEcho": "362:554",
+      "finalPierce": "362:601",
+      "finalBurst": "362:648",
+      "weeklyAim": "362:695",
+      "weeklyBurst": "362:743",
+      "chapter2Aim": "362:806",
+      "danger": "362:854",
+      "leaderNotPlayed": "362:901",
+      "unauthorized": "362:947",
+      "firstHit": "366:725",
+      "secondAim": "366:777",
+      "secondHit": "366:825",
+      "leaderUpdated": "366:873",
+      "leaderCleared": "366:919",
+      "newWeekAim": "366:965",
+      "newWeekResult": "366:1013",
+      "exit": "366:1050",
+      "resourceError": "366:1067",
+      "newWeekEmpty": "375:890",
+      "readError": "375:927",
+      "uploadError": "382:899"
+    },
+    "screenNames": {
+      "329:2": "V5/01 首页 · 初次进入",
+      "329:3": "V5/10 战斗 · 瞄准",
+      "337:37": "V5/11 战斗 · 发射",
+      "337:85": "V5/12 战斗 · 普通命中",
+      "337:133": "V5/13 战斗 · 连续命中",
+      "337:181": "V5/14 战斗 · 连锁扩散",
+      "337:229": "V5/15 战斗 · 连锁清场",
+      "337:277": "V5/16 战斗 · 回合收束",
+      "341:151": "V5/03 探索入口",
+      "341:168": "V5/04 章节选择",
+      "341:185": "V5/05 每周挑战",
+      "341:202": "V5/06 微信好友周榜",
+      "341:219": "V5/24 关卡完成",
+      "341:236": "V5/25 挑战未完成",
+      "342:193": "V5/20 奇遇降临",
+      "342:241": "V5/26 强化后瞄准",
+      "342:289": "V5/00 首次引导",
+      "342:337": "V5/02 首页 · 继续游戏",
+      "342:375": "V5/30 暂停与设置",
+      "346:302": "V5/21 获得能力 · 分裂",
+      "346:319": "V5/07 本周成绩",
+      "346:336": "V5/40 我的奇境 · 精灵",
+      "346:353": "V5/41 我的奇境 · 场景",
+      "346:370": "V5/31 设置",
+      "346:387": "V5/32 数据与隐私",
+      "346:404": "V5/33 资源加载",
+      "346:421": "V5/34 恢复进度",
+      "357:465": "V5/50 好友榜 · 使用说明",
+      "357:482": "V5/51 好友榜 · 空榜",
+      "357:499": "V5/52 好友榜 · 加载失败",
+      "357:516": "V5/53 好友榜 · 加载中",
+      "357:533": "V5/54 新周更新",
+      "357:550": "V5/55 本地保存失败",
+      "357:567": "V5/35 重置本地进度确认",
+      "357:584": "V5/36 清除好友榜成绩确认",
+      "361:540": "V5/22 获得能力 · 回响",
+      "361:574": "V5/23 获得能力 · 穿透",
+      "362:554": "V5/27 强化瞄准 · 回响",
+      "362:601": "V5/28 强化瞄准 · 穿透",
+      "362:648": "V5/29 最终清场",
+      "362:695": "V5/08 本周棋局",
+      "362:743": "V5/09 本周连锁结算",
+      "362:806": "V5/17 下一关瞄准",
+      "362:854": "V5/18 符印触底",
+      "362:901": "V5/56 好友榜 · 自己未参赛",
+      "362:947": "V5/57 好友榜 · 未授权",
+      "366:725": "V5/00a 教学 · 首次命中",
+      "366:777": "V5/00b 教学 · 第二回合",
+      "366:825": "V5/00c 教学 · 第二回合收束",
+      "366:873": "V5/58 好友榜 · 新纪录已同步",
+      "366:919": "V5/59 好友榜 · 成绩已清除",
+      "366:965": "V5/60 新周棋局",
+      "366:1013": "V5/61 新周首个纪录",
+      "366:1050": "V5/37 退出确认",
+      "366:1067": "V5/38 资源加载失败",
+      "375:890": "V5/62 新周好友榜 · 暂无好友参赛",
+      "375:927": "V5/63 本地进度读取失败",
+      "382:899": "V5/64 本周纪录 · 同步失败"
+    },
+    "prototype": {
+      "flowStartingPoints": [
+        {
+          "nodeId": "329:2",
+          "name": "01 · 首次完整体验"
+        },
+        {
+          "nodeId": "342:337",
+          "name": "02 · 继续游戏"
+        },
+        {
+          "nodeId": "341:185",
+          "name": "03 · 每周挑战与好友榜"
+        },
+        {
+          "nodeId": "362:854",
+          "name": "04 · 失败与重试"
+        },
+        {
+          "nodeId": "362:901",
+          "name": "05 · 自己尚未参赛"
+        },
+        {
+          "nodeId": "357:482",
+          "name": "06 · 暂无好友成绩"
+        },
+        {
+          "nodeId": "357:499",
+          "name": "07 · 榜单加载失败"
+        },
+        {
+          "nodeId": "362:947",
+          "name": "08 · 未授权仍可游戏"
+        },
+        {
+          "nodeId": "357:533",
+          "name": "09 · 新周更新"
+        },
+        {
+          "nodeId": "357:550",
+          "name": "10 · 本地保存失败"
+        },
+        {
+          "nodeId": "346:421",
+          "name": "11 · 恢复进度"
+        },
+        {
+          "nodeId": "366:1067",
+          "name": "12 · 资源加载失败"
+        },
+        {
+          "nodeId": "375:927",
+          "name": "13 · 本地读取失败"
+        },
+        {
+          "nodeId": "382:899",
+          "name": "14 · 成绩同步失败"
+        }
+      ]
+    }
+  },
+  "motion": {
+    "animatedNodeCount": 55,
+    "includesInheritedSpriteMotion": true,
+    "groups": [
+      "首页灵球轻浮动",
+      "发射反弹与命中反馈",
+      "目标消散与连锁路径",
+      "奇遇面板进入",
+      "分裂、回响、穿透获得反馈",
+      "通关分数与奖励出现",
+      "加载进度与榜单逐行出现"
+    ],
+    "sampledVideoRoot": "362:648",
+    "verification": "已导出最终清场 MP4 并抽帧检查路径、消散顺序和完成状态；导出背景与 Figma 静态画面存在差异，不作为美术验收样片"
+  },
+  "validation": {
+    "screenAndStateCount": 58,
+    "reachableFromReviewFlows": 58,
+    "flowCount": 14,
+    "navigationReactions": 156,
+    "brokenReactionDestinations": 0,
+    "unlinkedVisibleActions": 0,
+    "undersizedActionRegions": 0,
+    "bodyFooterOverlaps": 0,
+    "remainingPlaceholders": 0,
+    "fontFamilies": [
+      "Noto Sans SC"
+    ],
+    "minimumActionSize": 48,
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "verifiedAt": "2026-09-08",
+    "method": "Figma 节点结构校验、关键屏截图复核、清场动效抽帧；非真人可用性/真机测试"
+  },
+  "removedThisRun": [
+    "329:4"
+  ],
+  "historicalDesigns": "V3/V4 保留作对照，不是当前实现基线",
+  "prototypeLimitations": [
+    "示例分数、好友名单、章节、收藏和同步结果仅用于展示状态；不执行真实物理、微信授权、云读写或本地持久化",
+    "第二关为下一章节起始画面，未模拟完整后续关卡",
+    "减少动态效果的开关可以切换展示状态，尚未绑定全局时间轴",
+    "多个关键帧和状态转场用于演示；真实手感、时长和性能在灰盒真机验证"
+  ],
+  "pendingValidations": [
+    "user-approval:visual-direction-and-page-experience",
+    "unassisted-playthrough:goal-understanding-selection-retry-and-return",
+    "runtime-validation:physics-persistence-week-rollover-wechat-friends-and-performance",
+    "phase-a-gate:explicit-approval-before-cocos-graybox"
+  ],
+  "handoffDocument": "figma-v5-review.md"
+}
