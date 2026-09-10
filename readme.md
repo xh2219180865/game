@@ -1,44 +1,33 @@
-# 四方夺城 · 微信小游戏设计
+# 四方夺城
 
-当前仓库已放弃原“弹弹奇境”弹球方向，转为轻量城池争夺。“四方夺城”为工作名称。**当前只有文档，没有可运行游戏；本轮不做原型、Figma或代码。**
+轻量三国主题城池争夺微信小游戏，竖屏单手操作，首版为玩家＋3 个电脑。“四方夺城”为工作名称。
 
-先读[集中验收入口](openspec/changes/replace-pinball-with-territory-conquest/review.md)，再按关注点查看各附录。
+**当前只有设计文档，尚无可运行游戏。** 文档规则版本 v1.4，更新于 2026-09-10。弓兵移动远程交战和攻城营细则尚未定案，数值与地图未经试玩验证。
 
-## v1.3 文档设计：调兵主循环、策略与胜负军功
+## 阅读入口
 
-拖出一半兵，抢城并守住最后一城；正式局最多四分钟，到时城多者胜，同城数比兵力。
+- [文档索引](docs/README.md)：按主题阅读。
+- [产品与玩法设计](docs/01-产品与玩法设计.md)：派兵、营地、升级、塔射、转换与胜负。
+- [策略与军衔设计](docs/03-策略与军衔设计.md)：混合选卡、累计被动、永久解锁、周重置及军功。
+- [开发计划](docs/10-开发计划.md)：当前设计状态、待定事项与实施检查点。
 
-- 唯一正式入口：你＋3个明确标示的电脑；3关练兵、3张轮换四方地图。
-- 三类城（兵营/堡垒/驿站）各两级，一种军士；没有兵种克制或手动升城。
-- 主题选定“汉末三国·群雄军阵”：彩绘军棋沙盘，不加入武将抽卡/历史战役重演；八军衔、前七衔各五级、大将军小级持续增长；有效独胜+30军功，第2/3/4扣5/8/10；每30分一小级、最低0、可降衔，历史最高保留；不加战斗属性。
-- 新增12种仅设计的储备（8主动＋4被动），与首发合计19种；暂不进奖励池/界面/电脑配置，按H分批评审。
-- 首发四主动：有库存可反复用，每次成功扣一张，无卡槽/单局次数/公共冷却。
-- 三被动：本周每局自动、不扣次数，重复增强；第1/4/8个本周正式冠军各选一次，最多三次强化。
-- 独立冠军每胜一次三选一，选中同一种得2张主动；其他名次/并列/练习不发卡，无免费周卡、广告或付费卡。
-- 北京时间周一00:00策略/周进度到期，军功与历史最高不重置（失利仍可降衔）；原局已生效快照按规则收尾。
-- 一个本地可恢复战场；好友周榜只比本周标准四方冠军次数，是官方托管成绩，不是云存档或真人联机。
+## 当前规则
 
-新增边界：兼行实际ETA不变则整次取消、不扣卡/兵。金蝉脱壳/整军振旅后移；免费80%派兵、火袭3/5秒及招抚替换扩营仅作F/H对照试验方案，未启用。
+拖出一半兵，抢城并守住最后一城；正式局最多四分钟，到时城多者胜，同城数比驻军与有效在途总兵力。
 
-## 文档入口
+- 步兵营、弓营、骑营、塔营分别生产本营兵种；友援到达或成功占领后，存活者按目标营地 1∶1 转换。路过不转换，塔营不是弓营。
+- 营地按本营驻军门槛消耗部分兵力手动升级，最高三级；出兵不降级，易主保留等级。
+- 塔营自动攻击真实射程内的敌方行军部队及敌营驻军，不限目标是否来袭本塔；清零不等于占领。
+- 三关练兵、三张正式图，保留六图 42 个节点 ID；四类营地为首发设计，攻城营仅后续储备。
+- 首发四主动、三被动。有效独立冠军从已解锁混合候选只选一张；主动使用扣一张、单局不限次数，被动按获得张数累计、每局自动，无胜场里程碑或总层数上限。
+- 被动属性采用递减收益测试曲线；教学首胜永久解锁候选资格，不直接赠卡。
+- 军功冠军 +30，第 2／3／4 名扣 5／8／10，最低 0；每 30 分一小级，可降衔、最高保留，不加战斗属性。
+- 北京时间周一清当周库存、被动层数、待选和周冠军数；军功、最高、教学与永久卡池解锁保留。
 
-| 文档 | 用途 |
-| --- | --- |
-| [H 策略储备库](openspec/changes/replace-pinball-with-territory-conquest/appendices/strategy-reserve.md) | v1.2新增12种、效果/反制/动效、推荐批次与24项条件用例；不增加首发范围 |
-| [G 主题与战斗动效](openspec/changes/replace-pinball-with-territory-conquest/appendices/theme-and-battle-effects.md) | 三国主题、七策略与出兵分镜、军功升降/军衔旗饰 |
-| [集中验收](openspec/changes/replace-pinball-with-territory-conquest/review.md) | 本轮改变、阅读顺序、完整性核对 |
-| [主设计](openspec/changes/replace-pinball-with-territory-conquest/design.md) | 产品、兵种/城池、操作、战斗和胜负 |
-| [A 地图与电脑](openspec/changes/replace-pinball-with-territory-conquest/appendices/levels-and-ai.md) | 六张地图和AI配置 |
-| [B 页面与动效](openspec/changes/replace-pinball-with-territory-conquest/appendices/interface-and-motion.md) | 全流程、原创视觉、声音和小屏细节 |
-| [D 军衔与策略](openspec/changes/replace-pinball-with-territory-conquest/appendices/weekly-strategies-and-careers.md) | 等级、七策略、奖励和重复规则 |
-| [E 微信与存储](openspec/changes/replace-pinball-with-territory-conquest/appendices/platform-and-storage.md) | 保存/恢复、周界、好友榜、异常与发布门槛 |
-| [F 合理性与风险](openspec/changes/replace-pinball-with-territory-conquest/appendices/balance-and-risks.md) | 取舍、预算、平衡假设和未来试玩方法 |
-| [C 验收用例](openspec/changes/replace-pinball-with-territory-conquest/appendices/acceptance.md) | 220项首发未来用例与v1.3文档检查；H的24项仍为条件用例 |
-| [执行清单](openspec/changes/replace-pinball-with-territory-conquest/tasks.md) | 文档完成项与未实施工作分离 |
-| [提案](openspec/changes/replace-pinball-with-territory-conquest/proposal.md) | 为什么改变、影响范围 |
+## 技术和交付边界
 
-文档收敛不等于玩法吸引力、平台接入、真机性能已经通过。验收后再授权M0→M1→M2→M3实施；本次不提交/推送、不修改远端Figma或其他项目。
+本地核心与单局恢复；微信官方好友周榜为唯一业务数据联网例外，只比较同规则的当周对电脑冠军次数。不做真人服务、自建后端、账号、第三方统计、付费广告或完整云存档。12 种策略储备未启用。
 
-旧资料见[弹球退役说明](docs/history/retired-pinball-2026-09-08/HISTORY.md)，旧批准与截图不作为新游戏基线。上下文见[OpenSpec项目说明](openspec/project.md)。
+引擎暂建议 Cocos Creator 2D＋TypeScript，具体版本和微信导出链开工时核验。当前没有可运行的安装、构建、启动或游戏测试命令。文档格式可检查 `git diff --check`，但它不会覆盖未跟踪文件，也不能代替链接／规则检查或游戏测试。
 
-文档检查命令：`openspec validate replace-pinball-with-territory-conquest --strict`。目前没有游戏启动、构建或运行测试命令。
+项目约定见[AGENTS.md](AGENTS.md)。详细待办只维护在开发计划，不把文档更新当作原型／Figma／代码完成。

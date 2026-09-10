@@ -1,18 +1,19 @@
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
+# 项目协作约定
 
-These instructions are for AI assistants working in this project.
+## 阅读入口
 
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
+先读 readme.md 与 docs/README.md，再按任务读取对应设计。文档采用普通 Markdown，直接维护 docs 中的主题文件，不另建重复规则副本。
 
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
+## 设计边界
 
-Keep this managed block so 'openspec update' can refresh the instructions.
+- 当前为“四方夺城”设计阶段；实际实现进度见 docs/10-开发计划.md。
+- 基础玩法以 01 产品与玩法设计为准，策略/军功以 03 为准，存储/平台以 06 为准。
+- 首版为本地玩家＋电脑；仅微信官方好友周榜可使用托管成绩。不擅自增加后端、付费广告、第三方统计或真人联机。
+- 09 策略储备中的功能尚未启用，不因文档存在就加入首发。
+- 兵种按所在营地决定，友援到达或成功占领后转换；塔营独立于弓营，不擅自改为混编或途中换兵。未定兵种能力与测试参数的状态见 01 第 11 节。
+- 修改规则时同步相关界面、技术、需求核对和验收用例，保持地图/卡片/用例 ID 稳定。
+- 区分已设计、已实现、已实测；不得把文档检查写成游戏测试通过。
 
-<!-- OPENSPEC:END -->
+## 工作方式
+
+按用户当前任务范围执行，保留其它未提交修改。目录整理不改变玩法数值；开发、外部服务接入、Figma 修改与提交推送按用户授权进行。新增文件使用清晰的主题名称，优先更新已有文件。
