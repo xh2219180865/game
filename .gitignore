@@ -1,3 +1,11 @@
 .DS_Store
 .idea/
-
+.tmp/
+node_modules/
+dist/
+coverage/
+project.private.config.json
+.env
+.env.*
+!.env.example
+!.env.*.example

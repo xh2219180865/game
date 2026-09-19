@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#F6F3E7">
+  <meta name="description" content="谋定山河：拖出一半兵，四方争一胜。本地对电脑的轻量策略游戏。">
+  <title>谋定山河 · 本地试玩</title>
+  <style>
+    main{--safe-area-top:env(safe-area-inset-top,0px);--safe-area-bottom:env(safe-area-inset-bottom,0px);min-width:0;min-height:0}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#DDE5D9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}body{display:grid;place-items:center}main{width:100%;max-width:480px;height:100%;max-height:1000px;position:relative;background:#f6f3e7;box-shadow:0 12px 80px #0004}canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}#controls{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden}#controls:focus-within{width:100%;height:auto;max-height:45%;overflow:auto;background:#fffdf7;padding:12px;z-index:2;display:flex;gap:8px;flex-wrap:wrap}#controls button{font:inherit;min-height:44px;padding:8px 12px;border:1px solid #286c5c;border-radius:8px;background:#fffdf7;color:#213933}noscript{position:absolute;inset:30%;color:#213933}
+  </style>
+</head>
+<body>
+  <main aria-label="谋定山河">
+    <canvas id="game" role="application" aria-label="谋定山河战场。拖拽己方营地到目标派兵，轻点查询。Tab 可访问页面按钮，Escape 取消当前操作、暂停或返回。"></canvas>
+    <div id="boot" style="position:absolute;inset:30% 24px auto;color:#213933;text-align:center"><p>正在载入谋定山河…</p><button onclick="location.reload()" style="min-height:44px">重新载入</button></div>
+    <nav id="controls" aria-label="当前页面操作"></nav>
+    <noscript>请开启 JavaScript 后开始本地试玩。</noscript>
+  </main>
+  <script type="module">
+    import('./game.js').catch(() => {
+      const message = document.querySelector('#boot p');
+      if (message) message.textContent = '游戏启动失败，请检查本地服务或浏览器支持后重新载入。';
+    });
+  </script>
+</body>
+</html>

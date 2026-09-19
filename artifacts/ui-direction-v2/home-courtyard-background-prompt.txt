@@ -1,0 +1,10 @@
+Use case: precise-object-edit. Production background extraction from this original approved mobile game concept for 谋定山河. Preserve composition, hand-painted ancient Chinese Three Kingdoms military courtyard, gatehouse and open gate, miniature spear-and-shield soldiers at lower left, two patrol soldiers right, horse shelter, training dummies, warm grey stone paths, blue-grey tiles, green-grey mountains, soft daylight. Preserve exact portrait aspect 853:1844, object positions and overall illustration. This is a BACKGROUND ASSET, not a screenshot.
+
+REMOVE every user interface element and replace its pixels with seamless original environment:
+- entire top-left calligraphy title, little red seal, rank medallion with dangling ornament and rank text: replace with quiet open sky and distant mist, no emblems.
+- top-right translucent WeChat capsule and circular gear: replace with sky and distant scenery.
+- lower center red 出征 button and its shadow: replace with continuous quiet courtyard stone ground.
+- folded map icon to right of that button: replace with ground, preserve adjacent fence.
+- all three bottom menu icons, their shadows and all labels: replace with subtle calm warm stone/dust ground.
+Remove ALL readable letters/characters on gate signboard and cloth flags too: plain dark timber signboard, solid muted historical fabric banners, no glyphs.
+Do not move gate/soldiers/paths. Leave top 18 percent calm and text free and bottom 25 percent unobstructed soft low-contrast ground for future live UI. No added framing. No replacement text, logos, icons, floating objects, borders, UI, watermark or fake transparency. Return ONE fully opaque clean standalone background image at the same portrait ratio.
