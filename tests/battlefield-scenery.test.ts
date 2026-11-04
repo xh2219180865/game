@@ -51,9 +51,9 @@ test('three surface palettes remain stable and restore Canvas state without labe
 });
 
 test('successful terrain images still receive the same scenery as the fallback, with routes respected',async()=>{
-  const routes=[{from:{x:10,y:0},to:{x:10,y:540}}],fallback=probe();drawTerrain(fallback.ctx,375,540,[],'A01',routes);
+  const routes=[{from:{x:10,y:0},to:{x:10,y:540}}],fallback=probe();drawTerrain(fallback.ctx,375,540,[],'A02',routes);
   await loadArt(()=>{const image={width:1024,height:1536,onload:null,onerror:null} as unknown as ArtImage;Object.defineProperty(image,'src',{set(){queueMicrotask(()=>image.onload?.(new Event('load')));}});return image;});
-  const ready=probe();drawTerrain(ready.ctx,375,540,[],'A01',routes);ready.check();fallback.check();
+  const ready=probe();drawTerrain(ready.ctx,375,540,[],'A02',routes);ready.check();fallback.check();
   assert.equal(ready.calls.filter(c=>c.op==='drawImage').length,1);
   const positions=(p:ReturnType<typeof probe>)=>p.calls.filter(c=>c.op==='translate');
   assert.ok(positions(ready).length>=2);assert.deepEqual(positions(ready),positions(fallback));

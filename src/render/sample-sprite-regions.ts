@@ -1,18 +1,61 @@
 import type {Tier} from '../core/types.ts';
-
 export type SampleSpriteId=`sample-barracks-${Tier}`|`sample-infantry-${0|1|2|3|4|5}`;
-const uv=(x:number,y:number,w:number,h:number):readonly[number,number,number,number]=>[x/1536,y/1024,w/1536,h/1024];
-/** Shared soldier crop dimensions preserve helmet and ground alignment across frames. */
+/** New infantry artwork; equal source windows keep the actual foot baseline stable. */
 export const SAMPLE_SPRITE_CROPS:Record<SampleSpriteId,readonly[number,number,number,number]>={
-  'sample-barracks-1':uv(32,117,438,237),
-  'sample-barracks-2':uv(517,75,493,273),
-  'sample-barracks-3':uv(1027,4,502,348),
-  'sample-infantry-0':uv(153,350,210,314),
-  'sample-infantry-1':uv(665,350,210,314),
-  'sample-infantry-2':uv(1177,350,210,314),
-  'sample-infantry-3':uv(153,667,210,314),
-  'sample-infantry-4':uv(665,667,210,314),
-  'sample-infantry-5':uv(1177,667,210,314),
+  "sample-barracks-1": [
+    0.030598958333333332,
+    0.00390625,
+    0.2766927083333333,
+    0.2939453125
+  ],
+  "sample-barracks-2": [
+    0.3515625,
+    0,
+    0.2962239583333333,
+    0.2978515625
+  ],
+  "sample-barracks-3": [
+    0.68359375,
+    0.0009765625,
+    0.3014322916666667,
+    0.296875
+  ],
+  "sample-infantry-0": [
+    0.0986328125,
+    0.306640625,
+    0.14908854166666666,
+    0.3359375
+  ],
+  "sample-infantry-1": [
+    0.4169921875,
+    0.306640625,
+    0.14908854166666666,
+    0.3359375
+  ],
+  "sample-infantry-2": [
+    0.7535807291666666,
+    0.306640625,
+    0.14908854166666666,
+    0.3359375
+  ],
+  "sample-infantry-3": [
+    0.10091145833333333,
+    0.650390625,
+    0.14908854166666666,
+    0.3359375
+  ],
+  "sample-infantry-4": [
+    0.4215494791666667,
+    0.650390625,
+    0.14908854166666666,
+    0.3359375
+  ],
+  "sample-infantry-5": [
+    0.7552083333333334,
+    0.650390625,
+    0.14908854166666666,
+    0.3359375
+  ]
 };
 
 /** Six visible foot poses per 720 ms cycle; negative/invalid clocks remain still. */

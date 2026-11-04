@@ -4,7 +4,7 @@ import { campPennant } from '../src/render/art.ts';
 import type { FactionId } from '../src/core/types.ts';
 
 type Call={op:string;args:unknown[];font:unknown;fill:unknown};
-function pennant(value:number,faction:FactionId|null='P',selected=false){
+function pennant(value:number,faction:FactionId|null='P',selected=false,tier?:number){
   const calls:Call[]=[],initial={globalAlpha:.4,font:'11px serif',fillStyle:'#123',strokeStyle:'#456',lineWidth:4,textAlign:'left',textBaseline:'top'};
   let state:Record<string,unknown>={...initial};const stack:Record<string,unknown>[]=[];
   const ctx=new Proxy({}, {
@@ -15,7 +15,7 @@ function pennant(value:number,faction:FactionId|null='P',selected=false){
     },
     set(_target,key,value){state[String(key)]=value;return true;},
   }) as CanvasRenderingContext2D;
-  campPennant(ctx,100,200,value,faction,selected);assert.equal(stack.length,0);assert.deepEqual(state,initial);
+  campPennant(ctx,100,200,value,faction,selected,tier);assert.equal(stack.length,0);assert.deepEqual(state,initial);
   return calls;
 }
 
@@ -40,4 +40,15 @@ test('camp plaques show five ownership colours without flag glyphs',()=>{
 
 test('invalid pennant values do not touch drawing state or silently round troop counts',()=>{
   for(const value of [-1,.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1])assert.deepEqual(pennant(value),[]);
+});
+
+test('level plates stay separate from exact counts and readable for every owner, tier and digit width',()=>{
+  for(const owner of ['P','E1','E2','E3',null] as const)for(const tier of [1,2,3])for(const count of [0,30,9999,Number.MAX_SAFE_INTEGER]){
+    const calls=pennant(count,owner,false,tier),text=calls.filter(c=>c.op==='fillText');
+    assert.deepEqual(text[0]!.args,[String(count),100,200.5]);
+    assert.equal(text[0]!.font,'600 16px sans-serif');
+    assert.equal(text[1]!.args[0],['一级','二级','三级'][tier-1]);
+    assert.equal(text[1]!.font,'600 11px sans-serif');
+    assert.ok(Number(text[1]!.args[1])+11<=100-Math.max(34,String(count).length*9+14)/2);
+  }
 });

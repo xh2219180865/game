@@ -15,7 +15,7 @@ function harness(now:()=>number=()=>NOW,events:string[]=[],data=new Map<string,s
 async function ready(events:string[]=[],data?:Map<string,string>){const s=harness(undefined,events,data);await s.load();s.profile!.firstDragCompleted=true;s.profile!.tutorialFirstWins=['L01'];s.profile!.unlockedCardIds=['mobilize','supply','farming'];return s;}
 async function idle(s:GameSession){for(let i=0;s.busy&&i<100;i++)await new Promise(r=>setImmediate(r));assert.equal(s.busy,0);assert.equal(s.error,'');}
 async function finish(s:GameSession,win:boolean,inspect?:(s:GameSession)=>void){
-  assert.equal(await s.start(s.nextMap),true);const b=s.match!.battle;
+  assert.equal(await s.start(s.nextMap),true);delete s.match!.meritPolicy;const b=s.match!.battle; // Legacy score contract; new policy is covered separately.
   inspect?.(s);
   // Controlled last-millisecond states exercise real ranking and persistence, not balance or winnability.
   b.hasPlayerDispatch=true;b.gameMs=239999;
@@ -25,7 +25,7 @@ async function finish(s:GameSession,win:boolean,inspect?:(s:GameSession)=>void){
 }
 async function deadlineFixture(s:GameSession,troops:number[],action:'dispatch'|'supply'|'none'='dispatch'){
   // Only the final distribution/time is preset; actions, deadline ranking, settlement and storage use production code.
-  assert.equal(await s.start('A01'),true);
+  assert.equal(await s.start('A01'),true);delete s.match!.meritPolicy; // Restore a pre-update commitment.
   if(action==='dispatch'){
     assert.equal(await s.action({kind:'dispatch',sourceId:'A01-P1',targetId:'A01-N4'}),true);
     advanceBattle(s.match!.battle,s.match!.battle.armies[0]!.arrivalAtMs);assert.equal(s.match!.battle.armies.length,0);const reset=s.match!.battle.camps.find(c=>c.id==='A01-N4')!;reset.owner=null;reset.garrison=8;reset.credit=fraction(0);
@@ -105,7 +105,7 @@ test('Q07 Q08: no dispatch or supply-only play retains loss penalties without gr
 test('Q12: a committed 25-point forfeit survives duplicate input and reload without rank, card or map refunds',async()=>{
   const data=new Map<string,string>(),s=await ready([],data);s.profile!.rankPoints=25;s.profile!.highestRankPoints=25;s.profile!.activeInventory.supply=1;await s.start('A01');const id=s.match!.battle.id;
   await s.action({kind:'card',cardId:'supply',targetId:'A01-P1'});await Promise.all([s.forfeit(),s.forfeit()]);await s.load();
-  const p=s.profile!,r=p.latestResult!;assert.equal(p.rankPoints,15);assert.equal(p.activeInventory.supply,0);assert.equal(p.highestRankPoints,25);assert.equal(p.formalCompleted,0);assert.equal(p.choice,null);assert.equal(p.qualifiedArenaWins,0);assert.equal(r.result,null);assert.equal(r.settlementKind,'forfeit');
+  const p=s.profile!,r=p.latestResult!;assert.equal(p.rankPoints,25);assert.equal(p.activeInventory.supply,0);assert.equal(p.highestRankPoints,25);assert.equal(p.formalCompleted,0);assert.equal(p.choice,null);assert.equal(p.qualifiedArenaWins,0);assert.equal(r.result,null);assert.equal(r.settlementKind,'forfeit');
   const saved=JSON.stringify(p);settleMatch(p,id,NOW,'forfeit',()=>0);await s.forfeit();await s.load();assert.equal(JSON.stringify(s.profile),saved);
   const restored=harness(undefined,[],data);await restored.load();await restored.forfeit();assert.equal(JSON.stringify(restored.profile),saved);assert.equal(restored.page,'home');validateProfile(restored.profile);
 });

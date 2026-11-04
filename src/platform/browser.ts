@@ -17,10 +17,10 @@ const storage:StoragePort={
 };
 const audio=new GameAudio(()=>new AudioContext(),()=>Date.now(),()=>{if(!document.hidden&&session.profile?.settings.sound)view.notify('声音未能播放，请在设置中试听重试');});
 let view:GameView,lastVibration=0;
-function vibrate(){if(session.profile?.settings.vibration&&Date.now()-lastVibration>=500){lastVibration=Date.now();navigator.vibrate?.(15);}}
+function vibrate(){if(!document.hidden&&session.profile?.settings.vibration&&Date.now()-lastVibration>=500){lastVibration=Date.now();navigator.vibrate?.(15);}}
 const session=new GameSession({storage,now:()=>Date.now(),random:()=>Math.random(),notify:text=>view.notify(text),present:event=>view.present(event),events:events=>{
   view.events(events);audio.play(events,session.profile?.settings.sound??false,session.match?.battle.id??session.profile?.latestResult?.matchId,session.restorationVersion);
-  if(events.some(e=>e.type==='capture'))vibrate();
+  if(events.some(e=>e.type==='capture'&&e.faction==='P'))vibrate();
 }});
 view=new GameView(ctx,session,vibrate);
 view.soundPreview=()=>audio.preview();

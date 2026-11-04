@@ -82,6 +82,11 @@ export function validateProfile(value:unknown):asserts value is Profile {
   requireValue(Array.isArray(p.unlockedCardIds)&&p.unlockedCardIds.length===unlocked.length&&new Set(p.unlockedCardIds).size===unlocked.length&&p.unlockedCardIds.every(id=>unlocked.includes(id)),'永久卡池与练兵记录不一致');
   requireValue(week(p.weekId)&&week(p.maxObservedWeek)&&p.weekId===p.maxObservedWeek&&integer(p.maxObservedTime)&&weekIdAt(p.maxObservedTime)===p.weekId,'周与时钟记录异常');
   requireValue(counts(p.activeInventory,ACTIVE_IDS)&&counts(p.passiveLevels,PASSIVE_IDS)&&integer(p.qualifiedArenaWins),'本周资产异常');
+  if(p.weeklyRecord!==undefined){
+    const r=p.weeklyRecord;
+    requireValue(record(r)&&integer(r.archivedWeeks)&&r.archivedWeeks>0&&integer(r.totalWins)&&integer(r.bestWins)&&integer(r.lastWeekWins)
+      &&r.totalWins>=r.bestWins&&r.bestWins>=r.lastWeekWins&&week(r.lastWeekId)&&r.lastWeekId<p.weekId,'永久周战绩异常');
+  }
   for(const id of ACTIVE_IDS)requireValue(p.activeInventory[id]===0||unlocked.includes(id),'未解锁主动存在库存');
   for(const id of PASSIVE_IDS)requireValue(p.passiveLevels[id]===0||unlocked.includes(id),'未解锁被动存在层数');
   requireValue(record(p.settings)&&['sound','vibration','reducedMotion'].every(k=>typeof (p.settings as unknown as Record<string,unknown>)[k]==='boolean'),'设置异常');
@@ -89,16 +94,19 @@ export function validateProfile(value:unknown):asserts value is Profile {
     &&(p.leaderboard.pendingWins===null||integer(p.leaderboard.pendingWins))&&(p.leaderboard.lastSuccessAt===null||integer(p.leaderboard.lastSuccessAt)),'榜单偏好异常');
   if(p.activeMatch!==null){
     requireValue(record(p.activeMatch),'单局封套异常');const m=p.activeMatch;validateBattle(m.battle);
+    requireValue(m.meritPolicy===undefined||m.meritPolicy==='growth-v1','单局军功规则不兼容');
     requireValue(integer(m.realStartedAt)&&m.realStartedAt<=p.maxObservedTime&&week(m.startWeekId)&&weekIdAt(m.realStartedAt)===m.startWeekId,'单局现实时间异常');
     requireValue(m.modeId===(MAPS[m.battle.mapId].tutorial?'tutorial':'arena-four')&&m.rankedCommitment===(m.modeId==='arena-four'),'单局模式异常');
     if(m.modeId==='arena-four')requireValue(JSON.stringify(m.battle.factions.find(f=>f.id==='P')!.inventory)===JSON.stringify(p.activeInventory),'主动库存与战场不一致');
   }
   if(p.latestResult!==null){
     requireValue(record(p.latestResult),'结果格式异常');const r=p.latestResult;
+    requireValue(r.meritPolicy===undefined||r.meritPolicy==='growth-v1','结果军功规则不兼容');
     requireValue(text(r.matchId)&&Object.hasOwn(MAPS,r.mapId)&&integer(r.settledAt)&&week(r.settlementWeek)&&typeof r.resultAcknowledged==='boolean'&&typeof r.qualified==='boolean','结果基础字段异常');
     requireValue(['natural','forfeit','technical_void'].includes(r.settlementKind)&&['arena-four','tutorial'].includes(r.modeId),'结果分类异常');
     requireValue([r.rankPointsBefore,r.rankPointsAfter,r.highestRankPointsAfter,r.winsBefore,r.winsAfter,r.formalCompletedBefore,r.formalCompletedAfter].every(integer)
       &&Number.isSafeInteger(r.rankDeltaRequested)&&r.rankDeltaApplied===r.rankPointsAfter-r.rankPointsBefore&&r.rankPointsAfter===Math.max(0,r.rankPointsBefore+r.rankDeltaRequested),'结果军功异常');
+    if(r.meritPolicy==='growth-v1')requireValue(r.rankDeltaRequested===(r.modeId==='arena-four'&&r.settlementKind==='natural'&&r.qualified?30:0),'成长军功结果异常');
     requireValue(Array.isArray(r.fixedChoices)&&r.fixedChoices.every(id=>CARD_IDS.includes(id))&&r.fixedChoices.length<=3,'结果候选异常');
   }
   if(p.choice!==null){

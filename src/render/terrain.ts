@@ -27,9 +27,13 @@ export function drawTerrain(ctx:CanvasRenderingContext2D,width:number,height:num
   ctx.fillStyle=ground[0];ctx.fillRect(0,0,width,height);
   // Warm grey earth ties the battlefield to the courtyard's stone and foliage.
   // Existing landscape pigments use ordinary source-over drawing, without filters.
-  ctx.save();ctx.globalAlpha*=.38;
+  ctx.save();ctx.globalAlpha*=mapId==='A01'?.86:.38;
   const painted=drawArt(ctx,artwork,0,0,width,height,'cover');ctx.restore();
-  if(painted){drawBattlefieldScenery(ctx,width,height,centers,mapId,routes);ctx.restore();return;}
+  if(painted){
+    // The A01 painting already frames the open board; do not mix pale vector river bays into it.
+    if(mapId!=='A01')drawBattlefieldScenery(ctx,width,height,centers,mapId,routes);
+    ctx.restore();return;
+  }
   // Broad, quiet colour planes leave the battle readable without suggesting impassable terrain.
   ctx.fillStyle=ground[1];ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(width,0);ctx.lineTo(width,height*.31);ctx.bezierCurveTo(width*.72,height*.2,width*.64,height*.39,width*.4,height*.27);ctx.bezierCurveTo(width*.16,height*.14,width*.14,height*.41,0,height*.3);ctx.closePath();ctx.fill();
   ctx.fillStyle=ground[2];ctx.beginPath();ctx.moveTo(0,height*.3);ctx.bezierCurveTo(width*.26,height*.18,width*.25,height*.49,width*.52,height*.36);ctx.bezierCurveTo(width*.8,height*.27,width*.86,height*.43,width,height*.34);ctx.lineTo(width,height*.78);ctx.bezierCurveTo(width*.68,height*.6,width*.29,height*.84,0,height*.65);ctx.closePath();ctx.fill();

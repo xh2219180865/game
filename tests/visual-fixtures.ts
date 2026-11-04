@@ -6,7 +6,7 @@ import { advanceSimulation } from '../src/core/ai.ts';
 import { freshProfile, CARD_IDS } from '../src/core/progress.ts';
 import { fraction } from '../src/core/fraction.ts';
 import type { BattleEvent } from '../src/core/types.ts';
-import { COLORS, building, soldier } from '../src/render/art.ts';
+import { COLORS, building, campPennant, marchingSoldier, soldier } from '../src/render/art.ts';
 import { createStatePressure } from './pressure-fixture.ts';
 import { loadArt } from '../src/render/assets.ts';
 import { infantryWalkFrame, infantryDistanceFrame } from '../src/render/sample-sprite-regions.ts';
@@ -119,8 +119,9 @@ function identitySheet(){
   for(const [row,type]of (['barracks','archery','relay','fort'] as const).entries())for(const tier of [1,2,3]){
     const x=w*(tier-.5)/3,y=121+row*rowHeight;
     building(ctx,x,y+13,23,type,tier,'E2');
+    campPennant(ctx,x,y+43,30,'E2',false,tier);
     ctx.fillStyle=COLORS.ink;
-    ctx.font='13px sans-serif';ctx.fillText(['步兵营','弓营','骑营','塔营'][row]!,x,y+53);
+    ctx.font='13px sans-serif';ctx.fillText(['步兵营','弓营','骑营','塔营'][row]!,x,y+66);
   }
   for(const [i,type]of (['infantry','archer','cavalry','guard'] as const).entries()){
     const x=w*(i+.5)/4,y=h-47;soldier(ctx,x,y,type,'P',1.4);ctx.fillStyle=COLORS.ink;ctx.font='12px sans-serif';ctx.fillText(['步兵','弓兵','骑兵','守备兵'][i]!,x,y+25);
@@ -139,7 +140,7 @@ function sampleSheet(t:number){
   for(let i=0;i<3;i++)soldier(ctx,w/2+(i-1)*52,350,'infantry','P',1.8,0,0,1,infantryWalkFrame(clock,i,params.get('motion')!=='reduced'));
   ctx.fillStyle=COLORS.muted;ctx.font='13px sans-serif';ctx.fillText('抬腿、落脚，队员错开步点',w/2,404);
   ctx.fillText('实际战场尺寸',w/2,474);
-  for(let i=0;i<3;i++)soldier(ctx,w/2+(i-1)*30,518,'infantry','P',1,0,0,-1,infantryWalkFrame(clock,i,params.get('motion')!=='reduced'));
+  for(let i=0;i<3;i++)marchingSoldier(ctx,w/2+(i-1)*30,518,'infantry','P',1,0,0,-1,infantryWalkFrame(clock,i,params.get('motion')!=='reduced'));
 }
 function troopSheet(t:number){
   const {width:w,height:h}=view.viewport;
@@ -152,7 +153,7 @@ function troopSheet(t:number){
     ctx.fillStyle=COLORS.ink;ctx.font='600 14px sans-serif';ctx.fillText(['步兵','弓兵','骑兵','守备兵'][row]!,w/2,y-15);
     for(let col=0;col<6;col++)soldier(ctx,w*(col+.5)/6,y+35,type,'P',1.2,0,0,1,col);
     const distance=clock/1000*24*speed;
-    for(let slot=0;slot<3;slot++)soldier(ctx,w/2+(slot-1)*33,y+88,type,'P',1,0,0,-1,infantryDistanceFrame(distance,slot,moving));
+    for(let slot=0;slot<3;slot++)marchingSoldier(ctx,w/2+(slot-1)*33,y+88,type,'P',1,0,0,-1,infantryDistanceFrame(distance,slot,moving));
   }
 }
 function frame(t:number){if(scene==='identity')identitySheet();else if(scene==='sample-art')sampleSheet(t);else if(scene==='troop-motion')troopSheet(t);else view.draw(t);ctx.font='10px sans-serif';ctx.fillStyle='#6D746C';ctx.textAlign='center';ctx.fillText(`布局测试 · ${b.ruleRevision==='1.5'?'旧版 1.5 直达':'1.6 道路'} · 不保存、不计奖`,view.viewport.width/2,view.viewport.height-5);requestAnimationFrame(frame);}

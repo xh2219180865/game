@@ -6,6 +6,7 @@ import {BATTLE_SPRITE_CROPS} from '../src/render/battle-sprite-regions.ts';
 import {ART_SOURCES} from '../src/render/assets.ts';
 import {SAMPLE_SPRITE_CROPS} from '../src/render/sample-sprite-regions.ts';
 import {TROOP_MOTION_CROPS} from '../src/render/troop-motion-regions.ts';
+import {CAMP_ROOF_PANELS,CAMP_WALL_PANELS} from '../src/render/camp-architecture.ts';
 
 // Decode the shipped PNG, so a painted checkerboard or opaque RGBA cannot pass as transparency.
 async function pixels(source:string=ART_SOURCES.battlefield){
@@ -31,6 +32,24 @@ test('production battle atlas has real transparency, crisp alpha edges and fits 
   // Resampling retains near-opaque painted pixels (often alpha 254), not only exact 255.
   let clear=0,solid=0,edge=0;for(let p=3;p<out.length;p+=4){if(out[p]===0)clear++;else if(out[p]!>=240)solid++;else edge++;}
   assert.ok(clear>width*height*.3,'empty space must actually be transparent');assert.ok(solid>width*height*.2);assert.ok(edge>0,'retain antialiased edges');
+});
+
+test('faction roof and neutral wall pigments stay on opaque building surfaces instead of floating over the battlefield',async()=>{
+  const {width,height,out}=await pixels();
+  for(const [type,levels]of Object.entries(CAMP_ROOF_PANELS))for(const [tier,roofs]of Object.entries(levels)){
+    const [x,y,w,h]=BATTLE_SPRITE_CROPS[`camp-${type}-${tier}` as keyof typeof BATTLE_SPRITE_CROPS];
+    for(const polygon of [...roofs,...CAMP_WALL_PANELS[type as keyof typeof CAMP_WALL_PANELS]]){
+      const centre=polygon.reduce(([x,y],[u,v])=>[x+u/polygon.length,y+v/polygon.length],[0,0]);
+      for(const [index,p]of polygon.entries())for(const t of [0,.25,.5,.75]){
+        const q=polygon[(index+1)%polygon.length]!;
+        for(const inward of [0,.5,1]){
+          const u=(p[0]+(q[0]-p[0])*t)*(1-inward)+centre[0]!*inward,v=(p[1]+(q[1]-p[1])*t)*(1-inward)+centre[1]!*inward;
+          const alpha=out[(Math.floor((y+v*h)*height)*width+Math.floor((x+u*w)*width))*4+3]!;
+          assert.ok(alpha>=180,`${type}/${tier} tint at ${u.toFixed(3)},${v.toFixed(3)} must stay on its building`);
+        }
+      }
+    }
+  }
 });
 
 test('sample atlas has actual transparent gutters and distinct lifted-foot silhouettes',async()=>{

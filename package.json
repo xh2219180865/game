@@ -11,6 +11,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
+    "balance:audit": "node scripts/balance-audit.mjs",
     "benchmark": "node --expose-gc scripts/benchmark.mjs",
     "visual": "node scripts/visual.mjs",
     "runtime": "node scripts/runtime.mjs",

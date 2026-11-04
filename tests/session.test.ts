@@ -153,7 +153,7 @@ for(const minutes of [1439,1440,1441])test(`S15 S16 Q14: a formal snapshot at ${
 });
 test('Q12: a queued resume cannot reopen the battle page after the same match is forfeited',async()=>{
   const {s}=harness();await s.load();s.profile!.firstDragCompleted=true;s.profile!.tutorialFirstWins=['L01'];s.profile!.unlockedCardIds=['mobilize','supply','farming'];s.profile!.rankPoints=25;s.profile!.highestRankPoints=25;assert.equal(await s.start('A01'),true);await s.pause();
-  const forfeiting=s.forfeit(),resuming=s.resume();await Promise.all([forfeiting,resuming]);assert.equal(s.profile!.rankPoints,15);assert.equal(s.profile!.activeMatch,null);assert.equal(s.page,'home');assert.equal(s.error,'');
+  const forfeiting=s.forfeit(),resuming=s.resume();await Promise.all([forfeiting,resuming]);assert.equal(s.profile!.rankPoints,25);assert.equal(s.profile!.activeMatch,null);assert.equal(s.page,'home');assert.equal(s.error,'');
 });
 test('all teaching maps can run through session transactions, validation and result unlocks',async()=>{
   const {s}=harness();await s.load();

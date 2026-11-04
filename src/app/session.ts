@@ -120,7 +120,7 @@ export class GameSession {
       if(d.activeMatch)throw new ActionRejected('已有对局，请先继续或放弃');
       const id=`${d.generation}:${d.nextMatchSequence++}`,now=d.maxObservedTime;
       d.activeMatch={battle:createBattle(mapId,{id,firstDragCompleted:d.firstDragCompleted,passives:d.passiveLevels,inventory:d.activeInventory}),
-        modeId:map.tutorial?'tutorial':'arena-four',rankedCommitment:!map.tutorial,realStartedAt:now,startWeekId:d.weekId};
+        modeId:map.tutorial?'tutorial':'arena-four',rankedCommitment:!map.tutorial,meritPolicy:'growth-v1',realStartedAt:now,startWeekId:d.weekId};
     });
     this.enteringBattle--;
     if(ok&&version===this.practiceVersion&&!this.temporary){this.inputSequence=0;this.checkpoint=0;this.page='battle';if(presentationVersion===this.presentationVersion)this.options.present?.({kind:'passive-start',matchId:this.match!.battle.id});}return ok;

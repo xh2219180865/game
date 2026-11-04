@@ -90,3 +90,23 @@ test('F09: several towers killing a one-soldier army emit one actual loss',()=>{
   const towers=b.camps.filter(c=>c.owner==='E');for(const c of towers){c.type='fort';c.x=s.x+30;c.y=s.y;c.nextShotAtMs=100;c.feintUntil=0;}
   const events=advanceBattle(b,100);assert.equal(events.filter(e=>e.type==='tower-shot').length,2);assert.deepEqual(events.filter(e=>e.type==='army-loss').map(e=>e.amount),[1]);assert.ok(!b.armies.includes(army));
 });
+
+test('current standings and competing arrivals use public state without predicting capture',async()=>{
+  const {standingSummary,incomingSummary,resultExplanation}=await import('../src/render/battle-presentation.ts');
+  const b=createBattle('A01',{id:'awareness',firstDragCompleted:true,ruleRevision:'1.5'});
+  for(const f of b.factions)f.nextAiAtMs=10000;
+  assert.match(standingSummary(b),/1城 · 并列第1/);
+  const target=b.camps.find(c=>c.id==='A01-N5')!;
+  assert.equal(incomingSummary(b,target),null);
+  assert.equal(applyBattleAction(b,{kind:'dispatch',faction:'E1',sequence:1,sourceId:'A01-E1',targetId:target.id}).ok,true);
+  assert.equal(applyBattleAction(b,{kind:'dispatch',faction:'P',sequence:1,sourceId:'A01-P1',targetId:target.id}).ok,true);
+  const before=JSON.stringify(b),summary=incomingSummary(b,target)!;
+  assert.equal(summary.teams,2);assert.equal(summary.count,10);assert.ok(summary.etaMs>0);
+  assert.equal(JSON.stringify(b),before);
+  const result={reason:'deadline' as const,playerRank:2,independentWinner:'E1' as const,ranks:{P:2,E1:1},atMs:240000,
+    stats:[{faction:'P' as const,camps:2,troops:100,rank:2},{faction:'E1' as const,camps:3,troops:10,rank:1}]};
+  assert.match(resultExplanation(result),/你有 2 城.*领先方 3 城/);
+  result.stats[1]!.camps=2;result.stats[1]!.troops=110;
+  assert.match(resultExplanation(result),/你有 100 兵.*110 兵/);
+  assert.match(resultExplanation({...result,reason:'eliminated'}),/最后一城失守.*在途部队/);
+});

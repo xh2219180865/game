@@ -164,16 +164,18 @@ export function cardAccent(ctx:CanvasRenderingContext2D,x:number,y:number,id:Act
   if(reduced){cardSymbol(ctx,x,y,10,id);return;}
   const progress=Math.max(0,Math.min(1,ageMs/duration));
   ctx.save();
+  ctx.globalAlpha*=Math.min(1,(1-progress)*3);
   if(id==='supply'){
-    for(let i=0;i<Math.min(3,amount);i++)soldier(ctx,x-12+progress*14+i*6,y+16,troop,faction,.55,0);
+    const gather=1-(1-progress)**3;
+    for(let i=0;i<Math.min(3,amount);i++)soldier(ctx,x-12+gather*14+i*6,y+16,troop,faction,.55,Math.sin(progress*Math.PI*3+i));
     // A short muster baseline follows the men; it is not another troop counter.
     if(amount>0){ctx.globalAlpha*=1-progress;ctx.strokeStyle='#B79151';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-16+progress*8,y+22);ctx.lineTo(x+12,y+22);ctx.stroke();}
   }else if(id==='mobilize'){
-    const strike=Math.sin(Math.PI*progress);cardSymbol(ctx,x,y+strike,10*(1+.07*strike),id);ctx.globalAlpha*=1-progress;ctx.strokeStyle='#BD9455';ctx.lineWidth=1.5;
+    const strike=Math.sin(Math.PI*Math.min(1,progress/.38));cardSymbol(ctx,x,y+strike*2,14*(1+.03*strike),id);ctx.globalAlpha*=1-progress;ctx.strokeStyle='#BD9455';ctx.lineWidth=1.5;
     const radius=12+progress*8;for(const direction of [-1,1]){const angle=direction<0?Math.PI:0;ctx.beginPath();ctx.arc(x,y,radius,angle-.45,angle+.45);ctx.stroke();}
     ctx.strokeStyle='#F0D99B';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-3,y-8);ctx.lineTo(x-6,y-11-strike*3);ctx.moveTo(x+3,y-8);ctx.lineTo(x+6,y-11-strike*3);ctx.stroke();
   }else if(id==='feint'){
-    cardSymbol(ctx,x,y,10*(1+.08*Math.sin(Math.PI*progress)),id);ctx.globalAlpha*=1-progress;ctx.fillStyle='#8D8A7D';ctx.beginPath();ctx.ellipse(x-3+progress*3,y-14-progress*5,4+progress,3,0,0,Math.PI*2);ctx.fill();
+    cardSymbol(ctx,x,y,14*(1+.03*Math.sin(Math.PI*progress)),id);ctx.globalAlpha*=1-progress;ctx.fillStyle='#6D6A60';ctx.beginPath();ctx.ellipse(x-3+progress*3,y-14-progress*5,4+progress,3,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#CB7051';for(const dx of [-7,7]){ctx.beginPath();ctx.arc(x+dx+(dx<0?-2:2)*progress,y-9-progress*7,1.2,0,Math.PI*2);ctx.fill();}
   }else{
     cardSymbol(ctx,x+progress*2,y,10,id);ctx.globalAlpha*=1-progress;ctx.strokeStyle='#D3B574';ctx.lineWidth=1.5;
@@ -183,16 +185,31 @@ export function cardAccent(ctx:CanvasRenderingContext2D,x:number,y:number,id:Act
 }
 
 /** Compact plaque beneath the gate; the building and plaque share their faction colour. */
-export function campPennant(ctx:CanvasRenderingContext2D,x:number,y:number,value:number,id:FactionId|null,selected=false):void{
+export function campPennant(ctx:CanvasRenderingContext2D,x:number,y:number,value:number,id:FactionId|null,selected=false,tier?:number):void{
   if(![x,y,value].every(Number.isFinite)||!Number.isSafeInteger(value)||value<0)return;
   ctx.save();ctx.font='600 16px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
   const text=String(value),width=Math.max(34,Math.ceil(ctx.measureText(text).width)+14),left=x-width/2;
   ctx.lineJoin='round';ctx.lineWidth=selected?1.8:1;ctx.fillStyle=id===null?'#74797D':id==='P'?'#286451':id==='E2'?'#947324':id==='E3'?'#675682':'#9A4439';ctx.strokeStyle=selected?'#F1D493':'#DED1AE';
   rounded(ctx,left,y-11,width,22,2);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#FFF7E1';ctx.fillText(text,x,y+.5);ctx.restore();
+  ctx.fillStyle='#FFF7E1';ctx.fillText(text,x,y+.5);
+  if(tier===1||tier===2||tier===3){
+    // Fixed companion plate: the authoritative troop count never moves or shrinks.
+    ctx.fillStyle=['#494238','#53412A','#624418'][tier-1]!;
+    ctx.strokeStyle=['#A89A7A','#C7AB75','#F0D28C'][tier-1]!;
+    ctx.lineWidth=tier===3?1.5:1;
+    rounded(ctx,left-26,y-10,25,20,2);ctx.fill();ctx.stroke();
+    ctx.font='600 11px sans-serif';ctx.fillStyle='#FFF0CA';
+    ctx.fillText(['一级','二级','三级'][tier-1]!,left-13.5,y+.5);
+  }
+  ctx.restore();
 }
 
 /** Original broad silhouettes remain legible at small scales and without raster assets. */
+/** World troops are smaller than the city gate; static card/album illustrations use soldier directly. */
+export function marchingSoldier(ctx:CanvasRenderingContext2D,x:number,y:number,type:TroopType,id:FactionId,scale=1,step=0,bowLift=0,facing=1,walkFrame=0):void {
+  soldier(ctx,x,y,type,id,scale*.72,step,bowLift,facing,walkFrame);
+}
+
 export function soldier(ctx:CanvasRenderingContext2D,x:number,y:number,type:TroopType,id:FactionId,scale=1,step=0,bowLift=0,facing=1,walkFrame=0):void {
   if(![x,y,scale].every(Number.isFinite)||scale<=0)return;
   const stride=Number.isFinite(step)?Math.max(-1,Math.min(1,step)):0,lift=Number.isFinite(bowLift)?Math.max(0,Math.min(2,bowLift)):0;

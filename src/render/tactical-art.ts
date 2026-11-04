@@ -14,28 +14,47 @@ export function roadSegment(from:Point,to:Point,padding:number):{from:Point;to:P
   return {from:{x:from.x+x*padding,y:from.y+y*padding},to:{x:to.x-x*padding,y:to.y-y*padding}};
 }
 
+/** Each side follows the real centreline; only the earth edge is irregular. */
+function roadRibbon(ctx:CanvasRenderingContext2D,from:Point,to:Point,halfWidth:number,seed:number,color:string):void{
+  const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy),nx=-dy/length,ny=dx/length;
+  const steps=Math.max(5,Math.min(12,Math.ceil(length/14))),points:Point[]=[];
+  for(const side of [-1,1])for(let j=0;j<=steps;j++){
+    const i=side<0?j:steps-j,t=i/steps;
+    const edge=halfWidth*(.7+.2*Math.sin(i*2.17+seed+side)+.1*Math.sin(i*.83+seed));
+    points.push({x:from.x+dx*t+nx*side*edge,y:from.y+dy*t+ny*side*edge});
+  }
+  ctx.fillStyle=color;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();
+}
+
 export function drawRoads(ctx:CanvasRenderingContext2D,b:Battle,point:(p:Point)=>Point,selectedId:string|null,scale=1):void {
-  if(b.ruleRevision!=='1.6')return;
+  if(b.ruleRevision!=='1.6'||!Number.isFinite(scale)||scale<=0)return;
   const camps=new Map(b.camps.map(c=>[c.id,c]));
+  const snow=b.mapId==='A02'||b.mapId==='L02',sand=b.mapId==='A03'||b.mapId==='L03';
+  const palette=snow?['#71807845','#A4ADA0','#CCD0BA','#6F7C6A70']:sand?['#7B654343','#BAA47D','#C8B38C','#8D785656']:['#67543848','#A58A61','#B49A70','#79634160'];
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-  for(const [a,z] of MAPS[b.mapId].roads){
+  for(const [index,[a,z]] of MAPS[b.mapId].roads.entries()){
     const source=camps.get(a),target=camps.get(z);if(!source||!target)continue;
     const segment=roadSegment(point(source),point(target),Math.max(16,28*scale));if(!segment)continue;
-    const active=a===selectedId||z===selectedId;
-    const stroke=(width:number,color:string)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(segment.from.x,segment.from.y);ctx.lineTo(segment.to.x,segment.to.y);ctx.stroke();};
-    stroke(6.5,active?'#C8BEA2':b.mapId==='A02'?'#879C9460':'#85857560');
-    stroke(active?3:4.5,active?'#6D6654':b.mapId==='A02'?'#C5CFC3':b.mapId==='A03'?'#C7B99B':'#C3BEA6');
-    if(!active){
-      const dx=segment.to.x-segment.from.x,dy=segment.to.y-segment.from.y,length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length;
-      // Broken wheel ruts follow the real road, instead of transverse diagram ticks.
-      ctx.strokeStyle=b.mapId==='A02'?'#869D9544':'#87836E44';ctx.lineWidth=.55;
-      for(let step=8;step<length-7;step+=23)for(const side of [-1,1]){const x=segment.from.x+ux*step-uy*side*1.25,y=segment.from.y+uy*step+ux*side*1.25;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+ux*Math.min(10,length-step),y+uy*Math.min(10,length-step));ctx.stroke();}
+    const active=a===selectedId||z===selectedId,seed=index*1.71+b.mapId.charCodeAt(0);
+    const {from,to}=segment,dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length;
+    roadRibbon(ctx,from,to,7*scale,seed,palette[0]!);
+    roadRibbon(ctx,from,to,5*scale,seed,palette[1]!);
+    roadRibbon(ctx,from,to,3.2*scale,seed+.3,palette[2]!);
+    // Two broken wheel ruts and small transverse chips read as a worn road, never a new route.
+    ctx.strokeStyle=palette[3]!;ctx.lineWidth=.65*scale;
+    for(let step=7;step<length-5;step+=17*scale){
+      for(const side of [-1,1]){
+        const x=from.x+ux*step-uy*side*1.7*scale,y=from.y+uy*step+ux*side*1.7*scale;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+ux*Math.min(9*scale,length-step-3),y+uy*Math.min(9*scale,length-step-3));ctx.stroke();
+      }
     }
     if(active){
-      const from=a===selectedId?segment.from:segment.to,to=a===selectedId?segment.to:segment.from;
-      const mid={x:(from.x+to.x)/2,y:(from.y+to.y)/2},length=Math.hypot(to.x-from.x,to.y-from.y);
-      arrow(ctx,{x:mid.x-(to.x-from.x)/length*5,y:mid.y-(to.y-from.y)/length*5},{x:mid.x+(to.x-from.x)/length*5,y:mid.y+(to.y-from.y)/length*5},'#F0EBD8',1.6);
-      ctx.fillStyle='#6D6654';ctx.beginPath();ctx.arc(to.x,to.y,2.5,0,Math.PI*2);ctx.fill();
+      // A temporary bronze guide marks legal exits; the physical road stays on its real centreline.
+      ctx.strokeStyle='#6D6654';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+      const start=a===selectedId?from:to,end=a===selectedId?to:from;
+      const mid={x:(start.x+end.x)/2,y:(start.y+end.y)/2};
+      arrow(ctx,{x:mid.x-(end.x-start.x)/length*5,y:mid.y-(end.y-start.y)/length*5},{x:mid.x+(end.x-start.x)/length*5,y:mid.y+(end.y-start.y)/length*5},'#F0EBD8',1.6);
+      ctx.fillStyle='#6D6654';ctx.beginPath();ctx.arc(end.x,end.y,2.5,0,Math.PI*2);ctx.fill();
     }
   }
   ctx.restore();
@@ -47,9 +66,10 @@ export function marchTrail(ctx:CanvasRenderingContext2D,p:Point,angle:number,fac
   ctx.strokeStyle='#FCF1D8';ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(8,-4);ctx.lineTo(13,0);ctx.lineTo(8,4);ctx.stroke();
   ctx.strokeStyle=factionColor(faction);ctx.lineWidth=1.5;ctx.stroke();
   if(!reduced&&!crowded){
-    ctx.fillStyle='#8C7650';
+    ctx.fillStyle='#C6AF84';
+    const opacity=ctx.globalAlpha;
     for(let i=0;i<3;i++){
-      const t=((clock/650+i/3)%1+1)%1;ctx.globalAlpha=.22*(1-t);ctx.beginPath();ctx.ellipse(-14-t*18,(i%2?1:-1)*(3+t*3),2+t*3,1.2+t*1.5,0,0,Math.PI*2);ctx.fill();
+      const t=((clock/650+i/3)%1+1)%1;ctx.globalAlpha=opacity*.42*(1-t);ctx.beginPath();ctx.ellipse(-14-t*18,(i%2?1:-1)*(3+t*3),2+t*4,1.2+t*2,0,0,Math.PI*2);ctx.fill();
     }
   }
   ctx.restore();
@@ -72,11 +92,12 @@ export function tacticalAccent(ctx:CanvasRenderingContext2D,kind:'dispatch'|'arr
     if(kind==='dispatch'){
       for(const i of [0,1]){const offset=i*8+phase*7;ctx.beginPath();ctx.moveTo(offset-4,-6);ctx.lineTo(offset+2,0);ctx.lineTo(offset-4,6);ctx.stroke();}
     }else{
-      const recoil=reduced?0:Math.sin(Math.PI*phase)*2;
+      const recoil=reduced?0:Math.sin(Math.PI*phase)*4;
+      const approach=reduced?0:12*(1-Math.min(1,phase*3));
       ctx.strokeStyle='#B58B47';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(0,4,13+phase*5,8+phase*3,0,0,Math.PI*2);ctx.stroke();
       // Two readable steel blades meet once at the real arrival point.
       for(const side of [-1,1]){
-        const blade=()=>{ctx.beginPath();ctx.moveTo(-9-recoil,side*10);ctx.lineTo(9+recoil,-side*10);};
+        const blade=()=>{ctx.beginPath();ctx.moveTo(-9-recoil,side*(10+approach));ctx.lineTo(9+recoil,-side*(10-approach));};
         ctx.strokeStyle='#493E30';ctx.lineWidth=5;blade();ctx.stroke();
         ctx.strokeStyle='#F9EBCB';ctx.lineWidth=3;blade();ctx.stroke();
         ctx.strokeStyle='#BD873D';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-12,side*6);ctx.lineTo(-5,side*13);ctx.stroke();
@@ -86,7 +107,7 @@ export function tacticalAccent(ctx:CanvasRenderingContext2D,kind:'dispatch'|'arr
         for(const [sx,sy]of [[-1,-1],[1,-1],[1,1]] as const){const r=7+phase*7;ctx.beginPath();ctx.moveTo(sx*r,sy*r*.8);ctx.lineTo(sx*(r+4),sy*(r+4)*.8);ctx.stroke();}
       }
     }
-    if(!reduced&&!crowded){ctx.fillStyle='#A18355';ctx.globalAlpha*=.3;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(-7-phase*10,(-1+i)*(5+phase*6),2+phase*3,0,Math.PI*2);ctx.fill();}}
+    if(kind==='arrival'&&!reduced&&!crowded){ctx.fillStyle='#C2AA7B';ctx.globalAlpha*=.48;for(let i=0;i<2;i++){ctx.beginPath();ctx.arc(-7-phase*10,(-1+i*2)*(5+phase*6),2+phase*4,0,Math.PI*2);ctx.fill();}}
   }
   ctx.restore();
 }

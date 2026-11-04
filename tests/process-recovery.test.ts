@@ -70,7 +70,7 @@ for(const {scenario,barrier,title}of cases)test(title,{timeout:20000},async t=>{
   }
   assert.deepEqual(restored.reloaded,restored.continued,'a second read cannot grant or charge again');
   if(scenario==='win'||scenario==='loss'){
-    assert.equal(restored.reloaded.rankPoints,scenario==='win'?90:55);assert.equal(restored.reloaded.highestRankPoints,90);assert.equal(restored.reloaded.qualifiedArenaWins,scenario==='win'?1:0);
+    assert.equal(restored.reloaded.rankPoints,scenario==='win'?90:60);assert.equal(restored.reloaded.highestRankPoints,90);assert.equal(restored.reloaded.qualifiedArenaWins,scenario==='win'?1:0);
   }else if(scenario==='upgrade'){
     const source=restored.loaded.activeMatch!.battle.camps.find(c=>c.id==='A01-P1')!;
     assert.equal(source.tier,2);assert.equal(source.garrison,20);assert.deepEqual(restored.loaded.activeInventory,baseline.beforeOperation.activeInventory);

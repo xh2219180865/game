@@ -41,11 +41,11 @@ for(const [width,height]of [[320,568],[375,812],[430,932]] as const)test(`mobile
   assert.equal(applyBattleAction(b,{kind:'dispatch',faction:'E1',sequence:1,sourceId:'A01-N2',targetId:'A01-P1'}).ok,true);
   for(let i=0;i<40&&h.session.page==='battle';i++){h.session.tick(250);await idle(h.session);}
   assert.equal(h.session.page,'result');h.draw();
-  const result=h.session.profile!.latestResult!;assert.equal(result.result!.playerRank,4);assert.equal(result.rankDeltaRequested,-10);assert.equal(result.rankDeltaApplied,0);
+  const result=h.session.profile!.latestResult!;assert.equal(result.result!.playerRank,4);assert.equal(result.rankDeltaRequested,0);assert.equal(result.rankDeltaApplied,0);
   assert.ok(!h.labels.some(t=>t.includes('军功最低为 0')),'the zero-floor explanation belongs to the optional war report');assert.ok(h.labels.includes('查看战报 ›'));
   const report=h.find('result-details'),action=h.find('again'),before=h.snapshot();
   assert.equal(report.h,44);assert.ok(report.y>=48+72-8&&report.y+report.h<=height-12-151,'the first paint exposes the complete report control inside its clip');
-  h.tap('result-details');h.draw();assert.equal(h.find('result-details').label,'收起战报');assert.ok(h.labels.some(t=>t.includes('军功最低为 0，本次实际扣除 0。')));assert.equal(h.find('again').y,action.y);assert.deepEqual(h.snapshot(),before);
+  h.tap('result-details');h.draw();assert.equal(h.find('result-details').label,'收起战报');assert.ok(h.labels.join('').includes('最后一城失守'));assert.equal(h.find('again').y,action.y);assert.deepEqual(h.snapshot(),before);
   h.view.wheel(10000);h.draw();h.tap('result-details');h.draw();
   assert.equal((h.view as unknown as {scroll:number}).scroll,0,'collapsing a scrolled report returns to its summary instead of leaving blank space');
   assert.equal(h.find('result-details').label,'查看战报 ›');assert.deepEqual(h.snapshot(),before);

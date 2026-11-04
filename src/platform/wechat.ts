@@ -38,10 +38,10 @@ const storage:StoragePort={
 };
 const audio=new GameAudio(()=>{if(!wx.createWebAudioContext)throw new Error('WebAudio unavailable');return wx.createWebAudioContext();},()=>Date.now(),()=>{if(!hidden&&session.profile?.settings.sound)view.notify('声音未能播放，请在设置中试听重试');});
 let view:GameView,lastVibration=0;
-function vibrate(){if(session.profile?.settings.vibration&&Date.now()-lastVibration>=500){lastVibration=Date.now();wx.vibrateShort?.({type:'light'});}}
+function vibrate(){if(!hidden&&session.profile?.settings.vibration&&Date.now()-lastVibration>=500){lastVibration=Date.now();wx.vibrateShort?.({type:'light'});}}
 const session=new GameSession({storage,now:()=>Date.now(),random:()=>Math.random(),notify:text=>view.notify(text),present:event=>view.present(event),events:events=>{
   view.events(events);audio.play(events,!hidden&&(session.profile?.settings.sound??false),session.match?.battle.id??session.profile?.latestResult?.matchId,session.restorationVersion);
-  if(events.some(e=>e.type==='capture'))vibrate();
+  if(events.some(e=>e.type==='capture'&&e.faction==='P'))vibrate();
 }});
 view=new GameView(ctx,session,vibrate);
 view.soundPreview=()=>audio.preview();

@@ -1,9 +1,37 @@
-import { factionOf } from '../core/battle.ts';
+import { battleStats, factionOf } from '../core/battle.ts';
 import { CAMP_CONFIG, CAMP_RADIUS, TOWER_RANGE, campCapacity, movementSpeed } from '../core/config.ts';
 import { connected } from '../core/maps.ts';
 import { asNumber } from '../core/fraction.ts';
 import { distance, travelTime } from '../core/geometry.ts';
-import type { ActiveCardId, Army, Battle, BattleEvent, Camp, Point } from '../core/types.ts';
+import type { ActiveCardId, Army, Battle, BattleEvent, BattleResult, Camp, Point } from '../core/types.ts';
+
+/** Public, current standings; never predicts unissued orders or a guaranteed win. */
+export function standingSummary(b:Battle):string {
+  const stats=battleStats(b).filter(s=>!factionOf(b,s.faction)?.eliminated);
+  const player=stats.find(s=>s.faction==='P');
+  if(!player)return '已无营地';
+  const ahead=stats.filter(s=>s.camps>player.camps||s.camps===player.camps&&s.troops>player.troops).length;
+  const tied=stats.some(s=>s.faction!=='P'&&s.camps===player.camps&&s.troops===player.troops);
+  return `${player.camps}城 · ${tied?'并列':''}第${ahead+1}`;
+}
+
+export function incomingSummary(b:Battle,target:Camp):{faction:Army['faction'];count:number;etaMs:number;teams:number}|null {
+  const incoming=b.armies.filter(a=>a.targetId===target.id&&a.remainingCount>0&&!factionOf(b,a.faction)?.eliminated)
+    .sort((a,z)=>a.arrivalAtMs-z.arrivalAtMs||a.id.localeCompare(z.id));
+  const first=incoming[0];
+  return first?{faction:first.faction,count:first.remainingCount,etaMs:Math.max(0,first.arrivalAtMs-b.gameMs),teams:incoming.length}:null;
+}
+
+export function resultExplanation(r:BattleResult):string {
+  if(r.reason==='eliminated')return '最后一城失守，在途部队随之撤离；出征时也要留意末城来敌。';
+  if(r.reason==='last-camp')return '只剩一方持有营地，本局结束。';
+  const player=r.stats.find(s=>s.faction==='P');
+  const leader=[...r.stats].filter(s=>s.rank!==null).sort((a,z)=>a.rank!-z.rank!)[0];
+  if(player&&leader&&r.playerRank>1)return player.camps<leader.camps
+    ?`四分钟截止：你有 ${player.camps} 城，领先方 ${leader.camps} 城；城数优先于兵力。`
+    :`四分钟截止：城数相同，你有 ${player.troops} 兵，领先方 ${leader.troops} 兵；含有效在途兵力。`;
+  return '四分钟截止：城数优先，同城数比较驻军与有效在途兵力。';
+}
 
 export interface DispatchPreview {
   valid:boolean; reason:string; sent:number; retained:number; normalMs:number; travelMs:number;
@@ -65,6 +93,9 @@ export class LastCampAlerts {
   }
 }
 export interface Rect {x:number;y:number;w:number;h:number}
+export function battleAccentCost(e:BattleEvent):number{
+  return e.type==='capture'?5:e.type==='dispatch'||e.type==='arrival'&&e.reason==='enemy'?2:['volley','card'].includes(e.type)?3:1;
+}
 /** One transient accent per destination; the limit is decorative, never a rule cap. */
 export function selectBattleAccents(events:BattleEvent[]):Set<number>{
   const priority=(e:BattleEvent)=>e.type==='capture'?10:e.type==='arrival'?9:e.type==='upgrade'?8:e.type==='card'?6:e.type==='volley'||e.type==='tower-shot'?5:e.type==='dispatch'?4:0;
@@ -74,7 +105,7 @@ export function selectBattleAccents(events:BattleEvent[]):Set<number>{
   }
   const result=new Set<number>();let cost=0;
   for(const e of [...selected.values()].sort((a,b)=>priority(b)-priority(a)||b.id-a.id)){
-    const next=e.type==='capture'?5:e.type==='dispatch'||e.type==='arrival'&&e.reason==='enemy'?2:['volley','card'].includes(e.type)?3:1;if(cost+next>80)continue;cost+=next;result.add(e.id);
+    const next=battleAccentCost(e);if(cost+next>80)continue;cost+=next;result.add(e.id);
   }
   return result;
 }

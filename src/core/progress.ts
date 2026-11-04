@@ -19,18 +19,24 @@ export interface Choice {
 }
 export interface Match {
   battle:Battle; modeId:'arena-four'|'tutorial'; realStartedAt:number; startWeekId:string; rankedCommitment:boolean;
+  meritPolicy?:'growth-v1';
 }
 export interface Settlement {
   matchId:string; mapId:MapId; modeId:Match['modeId']; settledAt:number; settlementWeek:string; settlementKind:'natural'|'forfeit'|'technical_void';
   result:BattleResult|null; qualified:boolean; rankDeltaRequested:number; rankDeltaApplied:number; rankPointsBefore:number; rankPointsAfter:number;
   highestRankPointsAfter:number; winsBefore:number; winsAfter:number; formalCompletedBefore:number; formalCompletedAfter:number;
   fixedChoices:CardId[]; resultAcknowledged:boolean;
+  meritPolicy?:'growth-v1';
+}
+export interface WeeklyRecord {
+  archivedWeeks:number; totalWins:number; bestWins:number; lastWeekId:string; lastWeekWins:number;
 }
 export interface Profile {
   generation:string; nextMatchSequence:number; rankPoints:number; highestRankPoints:number; tutorialFirstWins:MapId[]; unlockedCardIds:CardId[];
   firstDragCompleted:boolean; formalCompleted:number; weekId:string; activeInventory:ActiveInventory; passiveLevels:PassiveLevels; qualifiedArenaWins:number;
   maxObservedWeek:string; maxObservedTime:number; activeMatch:Match|null; latestResult:Settlement|null; choice:Choice|null;
   settings:{sound:boolean;vibration:boolean;reducedMotion:boolean};
+  weeklyRecord?:WeeklyRecord;
   leaderboard:{optedIn:boolean;pendingWins:number|null;syncStatus:'off'|'pending'|'synced'|'error';lastSuccessAt:number|null};
 }
 export function weekIdAt(now:number):string {
@@ -51,6 +57,9 @@ export function observeTime(p:Profile,now:number):'same'|'changed'|'backward' {
   if(week<p.maxObservedWeek)return 'backward';
   p.maxObservedTime=Math.max(p.maxObservedTime,now);p.maxObservedWeek=week;
   if(week===p.weekId)return 'same';
+  const previous=p.weeklyRecord;
+  p.weeklyRecord={archivedWeeks:increment(previous?.archivedWeeks??0),totalWins:increment(previous?.totalWins??0,p.qualifiedArenaWins),
+    bestWins:Math.max(previous?.bestWins??0,p.qualifiedArenaWins),lastWeekId:p.weekId,lastWeekWins:p.qualifiedArenaWins};
   p.weekId=week;p.activeInventory=emptyInventory();p.passiveLevels=emptyPassives();p.qualifiedArenaWins=0;
   if(p.choice?.state==='pending')p.choice.state='expired';
   if(p.activeMatch)for(const f of p.activeMatch.battle.factions)f.inventory=emptyInventory();
@@ -86,7 +95,7 @@ export function settleMatch(p:Profile,matchId:string,now:number,kind:Settlement[
   const formal=match.modeId==='arena-four'&&match.rankedCommitment;
   const qualified=formal&&kind==='natural'&&b.result?.independentWinner==='P'&&b.hasPlayerDispatch;
   const rank=b.result?.playerRank??0;
-  const delta=!formal||kind==='technical_void'?0:kind==='forfeit'?-10:qualified?30:rank===2?-5:rank===3?-8:rank===4?-10:0;
+  const delta=!formal||kind==='technical_void'?0:match.meritPolicy==='growth-v1'?(qualified?30:0):kind==='forfeit'?-10:qualified?30:rank===2?-5:rank===3?-8:rank===4?-10:0;
   const candidates=qualified?mixedCandidates(p.unlockedCardIds,random):[];
   const points=Math.max(0,increment(p.rankPoints,delta));
   const completion=formal&&kind==='natural'&&b.hasPlayerDispatch?increment(p.formalCompleted):p.formalCompleted;
@@ -94,6 +103,7 @@ export function settleMatch(p:Profile,matchId:string,now:number,kind:Settlement[
   const result:Settlement={matchId,mapId:b.mapId,modeId:match.modeId,settledAt:now,settlementWeek:p.weekId,settlementKind:kind,result:b.result,
     qualified,rankDeltaRequested:delta,rankDeltaApplied:points-p.rankPoints,rankPointsBefore:p.rankPoints,rankPointsAfter:points,highestRankPointsAfter:Math.max(p.highestRankPoints,points),
     winsBefore:p.qualifiedArenaWins,winsAfter:wins,formalCompletedBefore:p.formalCompleted,formalCompletedAfter:completion,fixedChoices:candidates,resultAcknowledged:kind!=='natural'};
+  if(match.meritPolicy)result.meritPolicy=match.meritPolicy;
   if(match.modeId==='tutorial'&&kind==='natural'&&b.result?.independentWinner==='P'){
     if(!p.tutorialFirstWins.includes(b.mapId))p.tutorialFirstWins.push(b.mapId);
     p.unlockedCardIds=CARD_IDS.filter(id=>p.tutorialFirstWins.includes(CARDS[id].lesson));

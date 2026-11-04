@@ -1,12 +1,115 @@
 import type { TroopType } from '../core/types.ts';
-
 export type MotionTroop=Exclude<TroopType,'infantry'>;
 export type MotionFrame=0|1|2|3|4|5;
 export type MotionSpriteId=`motion-${MotionTroop}-${MotionFrame}`;
-/** Equal cell windows keep each unit's size and foot baseline stable across a stride. */
-export const TROOP_MOTION_CROPS=Object.fromEntries(
-  (['archer','cavalry','guard'] as const).flatMap((type,row)=>
-    Array.from({length:6},(_,frame)=>[`motion-${type}-${frame}`,type==='cavalry'
-      ?[((frame%3)*512+32)/1536,(Math.floor(frame/3)*502+8)/1024,448/1536,472/1024] as const
-      :[(frame*256+24)/1536,(row===0?12:674)/1024,232/1536,(row===0?316:332)/1024] as const])),
-) as Record<MotionSpriteId,readonly[number,number,number,number]>;
+/** Alpha-checked atlas windows: fixed dimensions per type and aligned planted feet. */
+export const TROOP_MOTION_CROPS:Record<MotionSpriteId,readonly[number,number,number,number]>={
+  "motion-archer-0": [
+    0.026243093922651933,
+    0.013812154696132596,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-archer-1": [
+    0.1929097605893186,
+    0.013812154696132596,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-archer-2": [
+    0.35957642725598526,
+    0.012430939226519336,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-archer-3": [
+    0.5262430939226519,
+    0.011049723756906077,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-archer-4": [
+    0.6929097605893186,
+    0.011049723756906077,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-archer-5": [
+    0.8595764272559853,
+    0.013812154696132596,
+    0.1141804788213628,
+    0.47513812154696133
+  ],
+  "motion-guard-0": [
+    0.022099447513812154,
+    0.5027624309392266,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-guard-1": [
+    0.1887661141804788,
+    0.5,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-guard-2": [
+    0.35543278084714547,
+    0.5,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-guard-3": [
+    0.5220994475138122,
+    0.4972375690607735,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-guard-4": [
+    0.6887661141804788,
+    0.4972375690607735,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-guard-5": [
+    0.8554327808471455,
+    0.5,
+    0.12246777163904236,
+    0.4903314917127072
+  ],
+  "motion-cavalry-0": [
+    0.0126953125,
+    0,
+    0.3001302083333333,
+    0.4853515625
+  ],
+  "motion-cavalry-1": [
+    0.3258463541666667,
+    0,
+    0.3001302083333333,
+    0.4853515625
+  ],
+  "motion-cavalry-2": [
+    0.66015625,
+    0,
+    0.3001302083333333,
+    0.4853515625
+  ],
+  "motion-cavalry-3": [
+    0.014322916666666666,
+    0.4970703125,
+    0.3001302083333333,
+    0.4853515625
+  ],
+  "motion-cavalry-4": [
+    0.3274739583333333,
+    0.4970703125,
+    0.3001302083333333,
+    0.4853515625
+  ],
+  "motion-cavalry-5": [
+    0.6608072916666666,
+    0.4970703125,
+    0.3001302083333333,
+    0.4853515625
+  ]
+};

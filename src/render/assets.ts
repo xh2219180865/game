@@ -5,14 +5,14 @@ import { TROOP_MOTION_CROPS, type MotionSpriteId } from './troop-motion-regions.
 /** Local, shared artwork. Platform entries supply images; rules never wait for art. */
 export const ART_SOURCES = {
   home:'assets/art/home-courtyard.jpg',
-  'terrain-plains':'assets/art/a-terrain-plains.jpg',
+  'terrain-plains':'assets/art/warfront-ground.jpg',
   'terrain-snow':'assets/art/a-terrain-snow.jpg',
   'terrain-desert':'assets/art/a-terrain-desert.jpg',
   cards:'assets/art/a-cards.jpg',
-  battlefield:'assets/art/a-battle.png',
-  sample:'assets/art/a-battle-sample.png',
-  motion:'assets/art/a-troop-motion.png',
-  cavalry:'assets/art/a-cavalry-motion.png',
+  battlefield:'assets/art/warfront-camps.png',
+  sample:'assets/art/warfront-infantry.png',
+  motion:'assets/art/warfront-foot.png',
+  cavalry:'assets/art/warfront-cavalry.png',
 } as const;
 type SourceId=keyof typeof ART_SOURCES;
 type CardKind='mobilize'|'march'|'supply'|'feint'|'farming'|'logistics'|'fortification';

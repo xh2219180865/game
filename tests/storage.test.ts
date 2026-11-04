@@ -37,7 +37,7 @@ for(const kind of ['memory','scoped'] as const)for(const win of [false,true])tes
   for(const f of b.factions)f.nextAiAtMs=240001;
   for(const c of b.camps){c.credit=fraction(0);if(c.owner)c.garrison=c.owner==='P'?(win?40:1):(win?10:40);if(c.nextShotAtMs!==null)c.nextShotAtMs=240001;}
   await s.pause();await s.resume();s.tick(1);for(let i=0;s.busy&&i<100;i++)await new Promise(r=>setImmediate(r));assert.equal(s.busy,0);assert.equal(s.error,'');assert.equal(s.page,'result');
-  assert.equal(s.profile!.rankPoints,win?90:50);assert.equal(s.profile!.qualifiedArenaWins,win?1:0);assert.equal(s.profile!.activeInventory.supply,2);
+  assert.equal(s.profile!.rankPoints,win?90:60);assert.equal(s.profile!.qualifiedArenaWins,win?1:0);assert.equal(s.profile!.activeInventory.supply,2);
   if(win){await s.acknowledge('choice');const id=s.profile!.choice!.candidateIds[0]!;await s.claim(id);const claimed=structuredClone(s.profile);await s.claim(id);assert.deepEqual(s.profile,claimed);}else await s.acknowledge();
   const expected=structuredClone(s.profile),restored=make();await restored.load();assert.deepEqual(restored.profile,expected);validateProfile(restored.profile);
   assert.deepEqual(bytes.map(([k])=>[k,original.values.get(k)]),bytes,'every original slot remains byte-for-byte unchanged');

@@ -27,12 +27,12 @@ async function loaded(){
 test('twelve painted camps use independent crops inside the original label clearance and retain geometry across factions',async()=>{
   await loaded();const crops=new Set<string>();
   for(const type of kinds)for(const tier of tiers){
-    const source=type==='barracks'?SAMPLE_SPRITE_CROPS[`sample-barracks-${tier}`]:BATTLE_SPRITE_CROPS[`camp-${type}-${tier}`];
+    const source=BATTLE_SPRITE_CROPS[`camp-${type}-${tier}`];
     assert.ok(source.every(Number.isFinite));
     assert.ok(source[0]>=0&&source[1]>=0&&source[2]>0&&source[3]>0&&source[0]+source[2]<=1&&source[1]+source[3]<=1);
     for(const size of [14,28,42]){
       const d=canvas();building(d.ctx,80,90,size,type,tier,'P');d.balanced();
-      const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,type==='barracks'||tier===1?1:2);
+      const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,1);
       const image=images.at(-1)!;
       assert.deepEqual(image.args.slice(1,5),[source[0]*imageWidth,source[1]*imageHeight,source[2]*imageWidth,source[3]*imageHeight]);
       crops.add(JSON.stringify(image.args.slice(1,5)));
@@ -40,11 +40,11 @@ test('twelve painted camps use independent crops inside the original label clear
       assert.deepEqual(d.calls.find(c=>c.op==='translate')?.args,[80,90]);
       assert.deepEqual(d.calls.find(c=>c.op==='scale')?.args,[k,k]);
       const x=80+localX!*k,y=90+localY!*k,w=localW!*k,h=localH!*k;
-      const halfWidth=type==='barracks'?33:31;
+      const halfWidth=33;
       assert.ok(x!>=80-halfWidth*k-1e-10&&x!+w!<=80+halfWidth*k+1e-10,'architecture stays inside horizontal clearance');
       assert.ok(y!>=90-34*k-1e-10&&y!+h!<=90+22*k+1e-10,'architecture stays above the troop label');
       assert.ok(Math.abs(y!+h!-(90+22*k))<1e-10,'sprite bottom remains anchored to the camp');
-      if(type==='barracks')assert.ok(Math.abs(w!-[40,54,66][tier-1]!*k)<1e-10,'the painted court grows with the level');
+      assert.ok(w!<=([46,58,66][tier-1]!)*k+1e-10,'the complete painted courtyard fits this tier’s width budget');
       assert.ok(!d.calls.some(c=>c.op==='fillText'||c.op==='strokeText'),'buildings never paint troop counts');
       const enemy=canvas();building(enemy.ctx,80,90,size,type,tier,'E2');enemy.balanced();
       assert.deepEqual(enemy.calls,d.calls,'ownership colours never change the painting crop or architecture geometry');
@@ -59,7 +59,7 @@ test('painted towers keep the actual aim endpoint and restore state at every lev
   await loaded();
   for(const tier of tiers)for(const size of [14,28,42])for(const aim of [0,Math.PI/2,Math.PI,-Math.PI/2,.37]){
     const d=canvas();building(d.ctx,80,90,size,'fort',tier,'P',aim);d.balanced();
-    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,tier===1?1:2);
+    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,1);
     assert.deepEqual(d.calls.find(c=>c.op==='translate')?.args,[80,90]);
     assert.deepEqual(d.calls.find(c=>c.op==='scale')?.args,[size/28,size/28]);
     const shaft=d.calls.find((c,i)=>c.op==='lineTo'&&d.calls[i-1]?.op==='moveTo'&&d.calls[i-1]!.args.every(v=>v===0));
@@ -74,7 +74,7 @@ test('a failed camp draw falls back immediately to twelve distinct Canvas buildi
   const silhouettes=new Set<string>();
   for(const type of kinds)for(const tier of tiers){
     await loaded();const d=canvas(true);building(d.ctx,80,90,28,type,tier,'P');d.balanced();
-    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,type==='barracks'||tier>1?2:1);
+    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,1);
     const fallback=canvas();building(fallback.ctx,80,90,28,type,tier,'P');fallback.balanced();
     assert.deepEqual(d.calls.slice(d.calls.findLastIndex(c=>c.op==='translate')),fallback.calls.slice(fallback.calls.findLastIndex(c=>c.op==='translate')),'the same frame renders the complete Canvas core after the failed sprite restores its clip');
     assert.ok(!fallback.calls.some(c=>c.op==='fillText'||c.op==='strokeText'));

@@ -25,7 +25,7 @@ test('roads expose only the selected real exits, stay under cities and leave leg
     const b=createBattle(id,{id:'roads',firstDragCompleted:true}),before=JSON.stringify(b),source=b.camps.find(c=>c.owner==='P')!;
     const d=drawing();drawRoads(d.ctx,b,p=>({x:p.x*scale,y:p.y*scale}),source.id,scale);d.balanced();
     assert.equal(d.calls.filter(c=>c.op==='stroke'&&c.style.lineWidth===3&&c.style.strokeStyle==='#6D6654').length,neighbors(b,source.id).length);
-    assert.equal(d.calls.filter(c=>c.op==='stroke'&&c.style.lineWidth===6.5).length,MAPS[id].roads.length,'one narrow earth edge for each real route');
+    assert.equal(d.calls.filter(c=>c.op==='fill'&&['#67543848','#71807845','#7B654343'].includes(String(c.style.fillStyle))).length,MAPS[id].roads.length,'one irregular soil envelope for each real route');
     for(const [a,z]of MAPS[id].roads){
       const from=b.camps.find(c=>c.id===a)!,to=b.camps.find(c=>c.id===z)!;
       const segment=roadSegment(from,to,28)!;

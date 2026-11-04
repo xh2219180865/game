@@ -2062,7 +2062,8 @@
         "tests/progress.test.ts",
         "tests/session.test.ts",
         "tests/session-rewards.test.ts",
-        "tests/view.test.ts"
+        "tests/view.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/view.test.ts"
@@ -2505,7 +2506,8 @@
       "testFiles": [
         "tests/storage.test.ts",
         "tests/session.test.ts",
-        "tests/transaction-failures.test.ts"
+        "tests/transaction-failures.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/transaction-failures.test.ts"
@@ -3214,7 +3216,8 @@
         "tests/progress.test.ts",
         "tests/session.test.ts",
         "tests/transaction-failures.test.ts",
-        "tests/session-rewards.test.ts"
+        "tests/session-rewards.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session-rewards.test.ts",
@@ -5908,7 +5911,8 @@
       "testFiles": [
         "tests/progress.test.ts",
         "tests/session.test.ts",
-        "tests/session-rewards.test.ts"
+        "tests/session-rewards.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session-rewards.test.ts"
@@ -5927,7 +5931,8 @@
       "testFiles": [
         "tests/progress.test.ts",
         "tests/session.test.ts",
-        "tests/view.test.ts"
+        "tests/view.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/view.test.ts"
@@ -5946,7 +5951,8 @@
       "testFiles": [
         "tests/progress.test.ts",
         "tests/session.test.ts",
-        "tests/session-rewards.test.ts"
+        "tests/session-rewards.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session-rewards.test.ts"
@@ -6029,7 +6035,8 @@
       "testFiles": [
         "tests/progress.test.ts",
         "tests/session.test.ts",
-        "tests/session-rewards.test.ts"
+        "tests/session-rewards.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session-rewards.test.ts"
@@ -6212,7 +6219,8 @@
         "tests/progress.test.ts",
         "tests/session.test.ts",
         "tests/transaction-failures.test.ts",
-        "tests/session-rewards.test.ts"
+        "tests/session-rewards.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session-rewards.test.ts",
@@ -6252,7 +6260,8 @@
       "testFiles": [
         "tests/progress.test.ts",
         "tests/session.test.ts",
-        "tests/view.test.ts"
+        "tests/view.test.ts",
+        "tests/experience-growth.test.ts"
       ],
       "namedIn": [
         "tests/session.test.ts",
@@ -9699,7 +9708,7 @@
         "tests/battle.test.ts"
       ],
       "acceptance": "verified-local",
-      "reviewEvidence": "已核对非负军功唯一来源、当前／最高分、完整军衔边界及亏损实际展示；军衔不改变战斗属性有整局深比较。",
+      "reviewEvidence": "已核对非负军功唯一来源、当前／最高分、完整军衔边界及亏损实际展示；军衔不改变战斗属性有整局深比较。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
           "title": "跨衔后失利",
@@ -9717,6 +9726,10 @@
             {
               "file": "tests/session-rewards.test.ts",
               "detail": "K20 K22: all three passive effects coexist, ranks add no combat attributes, and temporary lessons receive no strategies：0／480／1080军功同构战场完全相等。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -9737,6 +9750,10 @@
             {
               "file": "tests/progress.test.ts",
               "detail": "G15: rank thresholds and high-rank continuation follow points alone：1080大将军1／1230大将军6；Q04 every rank boundary... 逐级临界及31050大将军1000，无封顶归零。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -9757,10 +9774,10 @@
         "tests/battle.test.ts"
       ],
       "acceptance": "partial-local",
-      "reviewEvidence": "自然结算、无操作扣分、并列、正式责任建立与弃战原子去重有直接断言。正文的真实同文档后台不扣分尚待实测；可识别旧规则的 technical_void 完整旧包迁移／确认链尚无实证，不能把枚举和纯结算分支当交付完成。",
+      "reviewEvidence": "自然结算、无操作扣分、并列、正式责任建立与弃战原子去重有直接断言。正文的真实同文档后台不扣分尚待实测；可识别旧规则的 technical_void 完整旧包迁移／确认链尚无实证，不能把枚举和纯结算分支当交付完成。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
-          "title": "不派兵不能免除失败扣分",
+          "title": "无派兵不获得成长，旧局保留原责任",
           "acceptance": "verified-local",
           "caseIds": [
             "Q07",
@@ -9775,6 +9792,10 @@
             {
               "file": "tests/transaction-failures.test.ts",
               "detail": "S01 Q10: start before／after／unknown-write failure is atomic and recoverable：初始提交确认后 rankedCommitment=true，未知状态不允许另开正式。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -9795,6 +9816,10 @@
             {
               "file": "tests/session-rewards.test.ts",
               "detail": "Q01: actual deadline ranks settle 100 points to 130, 95, 92 and 90 with champion-only rewards：四个个人名次分别核对30／−5／−8／−10。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -9819,6 +9844,10 @@
             {
               "file": "tests/transaction-failures.test.ts",
               "detail": "S14 Q12: forfeit before／after／unknown-write failure is atomic and recoverable：故障保护和重新读取，同一事务清activeMatch。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10265,7 +10294,7 @@
         "tests/battle.test.ts"
       ],
       "acceptance": "verified-local",
-      "reviewEvidence": "北京时间周界清当周资产而保永久记录；原matchId属性／短效收尾、下局清空、首次settledAt归周及跨写回调的线性化均有直接断言。",
+      "reviewEvidence": "北京时间周界清当周资产而保永久记录；原matchId属性／短效收尾、下局清空、首次settledAt归周及跨写回调的线性化均有直接断言。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
           "title": "周界和结果",
@@ -10290,6 +10319,10 @@
             {
               "file": "tests/session-rewards.test.ts",
               "detail": "W09: a Sunday match ending Monday records that week once and Tuesday claiming cannot move its settlement：周一真实截止settledAt、周胜1／+30、次日领取不移周。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10309,6 +10342,10 @@
             {
               "file": "src/core/progress.ts",
               "detail": "observeTime 清库存／层数／pending choice／周胜但不清原battle效果和被动；GameSession事务在接受、读回后观察现实时间，排队动作重新校验。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10570,7 +10607,7 @@
         "tests/session.test.ts"
       ],
       "acceptance": "partial-local",
-      "reviewEvidence": "320 本地 Canvas 的四卡、营地查询、灰度旗形及触控区域有直接证据；正文的真实微信胶囊／设备安全区尚未实测，整项保留部分验收。",
+      "reviewEvidence": "320 本地 Canvas 的四卡、营地查询、灰度旗形及触控区域有直接证据；正文的真实微信胶囊／设备安全区尚未实测，整项保留部分验收。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
           "title": "320 窄屏",
@@ -10595,6 +10632,10 @@
             {
               "file": ".tmp/polish-and-acceptance/runtime-20260912.json",
               "detail": "U06/U07 的既有浏览器灰度与文字观察记录；配套 identity-gray-320/375/430.png 为旗形识别证据，仅签署本地布局，不涵盖微信实际胶囊。"
+            },
+            {
+              "file": "tests/view.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10659,7 +10700,7 @@
         "tests/session.test.ts"
       ],
       "acceptance": "verified-local",
-      "reviewEvidence": "名次由正式结果绘制，军功使用已保存前后值；并列／早退／低分下限／无收益兼行均有精确断言，结果与弃战入口分离。",
+      "reviewEvidence": "名次由正式结果绘制，军功使用已保存前后值；并列／早退／低分下限／无收益兼行均有精确断言，结果与弃战入口分离。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
           "title": "到时并列与早退",
@@ -10683,6 +10724,10 @@
             {
               "file": "src/render/game.ts",
               "detail": "result() 读取 stats.rank===null 显示未结算；无待选时立即给再战准备／返回首页，提前淘汰无需等待电脑高位。"
+            },
+            {
+              "file": "tests/view.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10709,6 +10754,10 @@
             {
               "file": ".tmp/polish-and-acceptance/result-timing-browser.json",
               "detail": "runs 的 win-promotion-320 与 write-after-lost-callback 使用同一 choiceId、grantQuantity=1；lost-callback-reread 仍只同一奖励。"
+            },
+            {
+              "file": "tests/view.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -10725,6 +10774,10 @@
             {
               "file": "tests/view.test.ts",
               "detail": "Q18: the real short route cancels a useless march without cost, retains preparation and permits ordinary dispatch after explicit cancellation：实际 A01 短线 normalMs=travelMs=1000，显示无需加急；松手 Profile／原文不变且 card=march；明确取消后普通派兵成功。"
+            },
+            {
+              "file": "tests/view.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -11130,7 +11183,7 @@
         "tests/session.test.ts"
       ],
       "acceptance": "partial-local",
-      "reviewEvidence": "北京时间周界、回拨保护和首次 settledAt 已有精确事务断言；版本不兼容只已验证原档拒写保护，未验证真实旧包升级路径，整项部分验收。",
+      "reviewEvidence": "北京时间周界、回拨保护和首次 settledAt 已有精确事务断言；版本不兼容只已验证原档拒写保护，未验证真实旧包升级路径，整项部分验收。 2026-11-04 revision: growth-v1 is a per-match snapshot, absent policy remains legacy; weeklyRecord is optional and atomic. See experience-growth.test.ts and current view/presentation tests for new local behavior. Human play and device evidence remain separate.",
       "scenarios": [
         {
           "title": "时区与回拨",
@@ -11150,6 +11203,10 @@
             {
               "file": "tests/session.test.ts",
               "detail": "W12 S16 repeated saves after same-week clock rollback 保留 maxObservedTime，不延长24小时；W09 保留接受时 settledAt，不按晚回调改周。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": []
@@ -11170,6 +11227,10 @@
             {
               "file": "src/render/game.ts",
               "detail": "recovery() 提示重新读取／确认备份恢复／清除本地，旧版本当前无自动迁移或 technical_void 路径。"
+            },
+            {
+              "file": "tests/experience-growth.test.ts",
+              "detail": "2026-11-04 local revision: review together with the preserved legacy suites. New-match no-loss merit, reload/weekly archive and/or presentation boundaries as applicable; not human play or device evidence."
             }
           ],
           "remaining": [
@@ -11357,5 +11418,6 @@
         }
       ]
     }
-  ]
+  ],
+  "experienceRevision": "2026-11-04: new matches snapshot growth-v1 merit policy; missing policy remains legacy. Weekly memorial archives observed wins atomically. Public traffic/standings and drag tolerance are presentation only. Transport trials are isolated models; no human balance or device certification."
 }

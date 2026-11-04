@@ -34,7 +34,7 @@ for(const type of kinds)test(`${type} grows from open camp to a court and full-h
       assert.deepEqual(d.calls.find(c=>c.op==='translate')?.args,[80,90]);
       assert.deepEqual(d.calls.find(c=>c.op==='scale')?.args,[size/28,size/28]);
       assert.deepEqual(d.calls.find(c=>c.op==='rect')?.args,[-33,-34,66,56]);
-      const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,type!=='barracks'&&tier>1?2:1);
+      const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,1,'each type and tier is one complete settlement');
       const [x,y,w,h]=images[0]!.args.slice(5) as number[];
       assert.ok(x!>=-33&&x!+w!<=33);assert.ok(y!>=-34&&y!+h!<=22+1e-10);
       assert.ok(Math.abs(x!+w!/2)<1e-10&&Math.abs(y!+h!-22)<1e-10);
@@ -42,18 +42,13 @@ for(const type of kinds)test(`${type} grows from open camp to a court and full-h
       topEdges.push(Math.min(...images.map(c=>Number(c.args[6]))));
       assert.ok(!d.calls.some(c=>c.op==='stroke'||c.op==='fillRect'),'normal artwork never adds flat Canvas pillars');
       assert.ok(d.calls.some(c=>c.op==='fill'&&Number(c.alpha)<.35),'roof colour is translucent over the painted tiles');
-      if(tier>1&&type!=='barracks'){
-        const [fx,fy,fw,fh]=images[1]!.args.slice(5) as number[];
-        assert.ok(fw!<w!-10,'forecourt leaves the two painted side towers visible');
-        assert.ok(fx!>=-33&&fx!+fw!<=33&&fy!>=-34&&fy!+fh!<=22+1e-10);
-        assert.ok(Math.abs(fy!+fh!-22)<1e-10,'both layers meet the same ground');
-      }
       assert.ok(!d.calls.some(c=>/Text/.test(c.op)));
       const other=drawing();drawCampArchitecture(other.ctx,80,90,size,type,tier,'E1');other.balanced();
       assert.deepEqual(other.calls.map(c=>[c.op,c.args]),d.calls.map(c=>[c.op,c.args]),'ownership changes colour without changing tier geometry');
       assert.notDeepEqual(other.calls.filter(c=>c.op==='fill'),d.calls.filter(c=>c.op==='fill'));
     }
     assert.ok(widths[1]!>widths[0]!&&widths[2]!>widths[1]!);
+    assert.ok(widths[2]!>=widths[0]!*1.6,'the fortress is at least 60% wider than the starting camp at the same world scale');
     assert.ok(topEdges[2]!<topEdges[0]!-10,'fortress adds both height and width to the starting camp');
   }
 });
@@ -81,7 +76,7 @@ test('raster failure renders the complete clipped Canvas fallback on the same fr
   const geometries=new Set<string>();
   for(const type of kinds)for(const tier of [1,2,3]){
     await loaded();const d=drawing(true);drawCampArchitecture(d.ctx,0,0,28,type,tier,'P');d.balanced();
-    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,type==='barracks'||tier>1?2:1);
+    assert.equal(d.calls.filter(c=>c.op==='drawImage').length,1,'one failed atlas draw is enough to trigger the full Canvas fallback');
     assert.ok(d.calls.some(c=>c.op==='fillRect'));
     assert.ok(!d.calls.some(c=>/Text/.test(c.op)));
     const second=drawing();drawCampArchitecture(second.ctx,0,0,28,type,tier,'P');second.balanced();

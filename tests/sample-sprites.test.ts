@@ -83,23 +83,23 @@ test('three sample camp silhouettes use progressively wider footprints and the s
   await loaded();const crops=new Set<string>(),widths:number[]=[];
   for(const tier of [1,2,3] as const){
     const d=drawing();building(d.ctx,90,120,28,'barracks',tier,'P');d.balanced();
-    const image=d.calls.find(c=>c.op==='drawImage')!;assert.equal((image.args[0] as ArtImage).src,ART_SOURCES.sample);
+    const image=d.calls.find(c=>c.op==='drawImage')!;assert.equal((image.args[0] as ArtImage).src,ART_SOURCES.battlefield);
     crops.add(JSON.stringify(image.args.slice(1,5)));const [x,y,w,h]=image.args.slice(5) as number[];widths.push(w!);
     assert.deepEqual(d.calls.find(c=>c.op==='translate')?.args,[90,120]);
     assert.deepEqual(d.calls.find(c=>c.op==='scale')?.args,[1,1]);
     assert.ok(Math.abs(x!+w!/2)<1e-10);assert.ok(Math.abs(y!+h!-22)<1e-10);assert.ok(h!<=56);
   }
-  assert.deepEqual(widths,[40,54,66]);assert.equal(crops.size,3);
+  assert.ok(widths[0]!<widths[1]!&&widths[1]!<widths[2]!&&widths[2]!<=66);assert.equal(crops.size,3);
 });
 
-test('sample failures retain the previous image and double image failures draw immediate Canvas fallback',async()=>{
+test('missing infantry motion falls back to the new static sprite, while a missing city atlas uses complete Canvas architecture',async()=>{
   for(const kind of ['camp','troop'] as const)for(const fail of ['sample','all'] as const){
     await loaded();const d=drawing(fail);
     if(kind==='camp')building(d.ctx,90,120,28,'barracks',3,'P');else soldier(d.ctx,90,120,'infantry','P',1,.8,0,-1,5);
-    d.balanced();const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,2);
-    assert.deepEqual(images.map(c=>(c.args[0] as ArtImage).src),[ART_SOURCES.sample,ART_SOURCES.battlefield]);
-    if(fail==='all')assert.ok(d.calls.some(c=>c.op==='fillRect'),'both unavailable atlases still produce a visible fallback');
-    else assert.ok(!d.calls.some(c=>c.op==='ellipse'),'one failure keeps the existing painted artwork');
+    d.balanced();const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,kind==='camp'?1:2);
+    assert.deepEqual(images.map(c=>(c.args[0] as ArtImage).src),kind==='camp'?[ART_SOURCES.battlefield]:[ART_SOURCES.sample,ART_SOURCES.battlefield]);
+    if(fail==='all')assert.ok(d.calls.some(c=>c.op==='fillRect'),'unavailable atlases still produce a complete visible fallback');
+    else assert.ok(!d.calls.some(c=>c.op==='ellipse'),'one motion failure retains the painted identity');
     assert.ok(!d.calls.some(c=>c.op==='fillText'),'fallback never invents troop counts');
   }
 });

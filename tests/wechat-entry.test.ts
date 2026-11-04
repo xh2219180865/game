@@ -22,7 +22,7 @@ async function idle(s:GameSession){for(let i=0;i<100;i++){await new Promise(reso
 
 async function harness(mode:AudioMode='available',artMode:'success'|'failure'|'pending'='success',windowOptions:Partial<WindowProbe>={}){
   const geometry:WindowProbe={width:375,height:812,safeTop:44,safeBottom:778,menu:()=>({bottom:60}),...windowOptions};
-  let now=Date.parse('2026-09-12T12:00:00+08:00'),writes=0,failWrites=false,creates=0,resumes=0,suspends=0,holdWrite=false,pendingWrite:(()=>void)|null=null;
+  let now=Date.parse('2026-09-12T12:00:00+08:00'),writes=0,failWrites=false,creates=0,resumes=0,suspends=0,holdWrite=false,vibrations=0,pendingWrite:(()=>void)|null=null;
   const frames:(()=>void)[]=[],listeners:Record<string,(e?:unknown)=>void>={},data=new Map<string,string>(),texts:string[]=[],oscillators:{disconnected:boolean;started:boolean;onended:(()=>void)|null}[]=[];
   const context=new Proxy({measureText:(text:string)=>({width:[...text].length*8}),fillText:(text:string)=>texts.push(String(text)),createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}})},{get:(target,key)=>key in target?target[key as keyof typeof target]:()=>{}});
   const canvas={width:0,height:0,getContext:(kind:string)=>{assert.equal(kind,'2d');return context;}};
@@ -44,7 +44,7 @@ async function harness(mode:AudioMode='available',artMode:'success'|'failure'|'p
     setStorage({key,data:value,success,fail}:{key:string;data:string;success:()=>void;fail:(e:Error)=>void}){writes++;if(failWrites)fail(new Error('storage full'));else if(holdWrite){holdWrite=false;pendingWrite=()=>{data.set(key,value);success();};}else{data.set(key,value);success();}},
     removeStorage({key,success}:{key:string;success:()=>void}){data.delete(key);success();},
     onTouchStart:(fn:(e?:unknown)=>void)=>{listeners.start=fn;},onTouchMove:(fn:(e?:unknown)=>void)=>{listeners.move=fn;},onTouchEnd:(fn:(e?:unknown)=>void)=>{listeners.end=fn;},onTouchCancel:(fn:(e?:unknown)=>void)=>{listeners.cancel=fn;},
-    onHide:(fn:()=>void)=>{listeners.hide=fn;},onShow:(fn:()=>void)=>{listeners.show=fn;},onWindowResize:(fn:()=>void)=>{listeners.resize=fn;},vibrateShort(){},
+    onHide:(fn:()=>void)=>{listeners.hide=fn;},onShow:(fn:()=>void)=>{listeners.show=fn;},onWindowResize:(fn:()=>void)=>{listeners.resize=fn;},vibrateShort(){vibrations++;},
     ...(mode==='missing'?{}:{createWebAudioContext(){creates++;if(mode==='create-failure')throw new Error('audio unavailable');return sound;}}),
   };
   class Clock extends Date{static override now(){return now;}}
@@ -63,7 +63,7 @@ async function harness(mode:AudioMode='available',artMode:'success'|'failure'|'p
     setWindow:(next:Partial<WindowProbe>)=>{Object.assign(geometry,next);wx.getMenuButtonBoundingClientRect=geometry.menu==='missing'?undefined:()=>geometry.menu==='missing'?undefined:geometry.menu();},
     artStatus:()=>vm.WechatEntryProbe.getArtStatus() as {ready:number;loading:number;failed:number;total:number},
     finishImages:()=>{artMode='success';pendingImages.forEach(image=>image.onload?.());},
-    stats:()=>({writes,creates,resumes,suspends}),failWrites:()=>{failWrites=true;},holdNextWrite:()=>{holdWrite=true;},hasPendingWrite:()=>pendingWrite!==null,releaseWrite:()=>{assert.ok(pendingWrite);const release=pendingWrite;pendingWrite=null;release();}};
+    stats:()=>({writes,creates,resumes,suspends,vibrations}),failWrites:()=>{failWrites=true;},holdNextWrite:()=>{holdWrite=true;},hasPendingWrite:()=>pendingWrite!==null,releaseWrite:()=>{assert.ok(pendingWrite);const release=pendingWrite;pendingWrite=null;release();}};
 }
 
 for(const hidden of [false,true])test(`WeChat entry: delayed audio resume preserves dispatch sound and cancels it on hide=${hidden}`,async()=>{
@@ -204,4 +204,16 @@ test('WeChat entry: settings silence active audio, and failed pause storage cann
   const played=h.oscillators.length;await h.s.action({kind:'dispatch',sourceId:h.s.match!.battle.camps.find(c=>c.owner==='P')!.id,targetId:h.s.match!.battle.camps.find(c=>c.owner===null)!.id});assert.equal(h.oscillators.length,played);
   await h.s.setting('sound');h.touch('start',10,10);h.touch('cancel',10,10);h.frame(120);h.audio.click(true);assert.ok(h.oscillators.some(o=>!o.disconnected));
   h.failWrites();h.listeners.hide!();assert.ok(h.oscillators.every(o=>o.disconnected));await idle(h.s);assert.equal(h.s.page,'recovery');assert.ok(h.s.error);assert.ok(h.data.size>0,'previous committed slots remain available');
+});
+
+
+test('WeChat haptics: only player captures vibrate, hidden or disabled feedback stays silent',async()=>{
+  const h=await harness();await h.start();await h.s.setting('vibration');
+  const emit=(h.s as unknown as {options:{events:(events:BattleEvent[])=>void}}).options.events;
+  const capture=(faction:'P'|'E1',id:number):BattleEvent=>({id,atMs:0,type:'capture',targetId:'L01-N1',faction});
+  emit([capture('E1',10001)]);assert.equal(h.stats().vibrations,0);
+  emit([capture('P',10002)]);assert.equal(h.stats().vibrations,1);
+  emit([capture('P',10003)]);assert.equal(h.stats().vibrations,1,'rate limited');
+  h.listeners.hide!();await idle(h.s);emit([capture('P',10004)]);assert.equal(h.stats().vibrations,1);
+  h.listeners.show!();await h.s.setting('vibration');emit([capture('P',10005)]);assert.equal(h.stats().vibrations,1);
 });

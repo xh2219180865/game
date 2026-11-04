@@ -37,7 +37,7 @@ for(const platform of ['browser','wechat'])test(`U16: ${platform} vibration requ
   const code=transformSync(source.slice(start,end),{loader:'ts',target:'es2022'}).code;
   let now=1000;const calls:{at:number;payload:unknown}[]=[],session={profile:{settings:{vibration:true}}};
   const send=(payload:unknown)=>calls.push({at:now,payload});
-  const vibrate=new Function('session','Date','navigator','wx',`let lastVibration=0;${code};return vibrate;`)(session,{now:()=>now},{vibrate:send},{vibrateShort:send}) as ()=>void;
+  const vibrate=new Function('session','Date','navigator','wx','document','hidden',`let lastVibration=0;${code};return vibrate;`)(session,{now:()=>now},{vibrate:send},{vibrateShort:send},{hidden:false},false) as ()=>void;
   vibrate();vibrate();now=1499;vibrate();assert.equal(calls.length,1);
   now=1500;vibrate();assert.equal(calls.length,2);session.profile.settings.vibration=false;now=2500;vibrate();now=3000;vibrate();assert.equal(calls.length,2);
   session.profile.settings.vibration=true;assert.equal(calls.length,2);vibrate();now=3499;vibrate();assert.equal(calls.length,3);now=3500;vibrate();

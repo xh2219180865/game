@@ -58,7 +58,7 @@ for(const [width,height] of [[320,568],[375,812],[430,932]] as const){
     const before=JSON.stringify(session.profile);assert.ok(h.labels.some(l=>l.text==='军功 108'));
     assert.ok(!h.labels.some(l=>l.text.includes('军衔没有战斗属性')));
     seek('rank-rules').run();draw();
-    const full=scan();assert.ok(full.includes('军衔没有战斗属性'));assert.ok(full.includes('第 2／3／4 名 −5／−8／−10'));
+    const full=scan();assert.ok(full.includes('军衔没有战斗属性'));assert.ok(full.includes('失败、平局和放弃不扣军功'));
     const expanded=seek('rank-rules');assert.equal(expanded.label,'收起规则');expanded.run();draw();
     expanded.run();draw();assert.equal(seek('rank-rules').label,'军功规则 ›');assert.ok(!scan().includes('军衔没有战斗属性'));
     assert.equal(JSON.stringify(session.profile),before);assert.equal(h.writes(),0);assert.equal(session.page,'ranks');assert.ok(view.regions.some(r=>r.id==='back'));

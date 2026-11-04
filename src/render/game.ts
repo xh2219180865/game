@@ -7,8 +7,8 @@ import { armyPosition, distance } from '../core/geometry.ts';
 import { MAPS, neighbors } from '../core/maps.ts';
 import { ACTIVE_IDS, CARD_IDS, CARDS, lessonOpen, nextWeekAt, PASSIVE_IDS, rankName } from '../core/progress.ts';
 import type { ActiveCardId, BattleEvent, Camp, CardId, MapId, Point } from '../core/types.ts';
-import { arrivalAccent, arrow, building, campPennant, cardAccent, cardSymbol, COLORS, departureAccent, factionColor, factionName, flag, passiveRewardSymbol, rankBadge, rounded, soldier, soldierHit } from './art.ts';
-import { cardTargetPreview, dispatchPreview, isMarching, LastCampAlerts, StableArmyLabels, placeArmyLabels, selectBattleAccents } from './battle-presentation.ts';
+import { arrivalAccent, arrow, building, campPennant, cardAccent, cardSymbol, COLORS, departureAccent, factionColor, factionName, flag, marchingSoldier, passiveRewardSymbol, rankBadge, rounded, soldierHit } from './art.ts';
+import { battleAccentCost, cardTargetPreview, dispatchPreview, incomingSummary, resultExplanation, standingSummary, isMarching, LastCampAlerts, StableArmyLabels, placeArmyLabels, selectBattleAccents } from './battle-presentation.ts';
 import type { Rect } from './battle-presentation.ts';
 import { RetreatPresentation } from './retreat.ts';
 import { drawTerrain } from './terrain.ts';
@@ -232,14 +232,18 @@ export class GameView {
     }
     c.restore();
   }
-  private campAt(x:number,y:number):Camp|null{
+  private campAt(x:number,y:number,padding=0,sourceId?:string):Camp|null{
     const scale=Math.max(20,30*this.board.k)/28;
     const candidates=this.session.match?.battle.camps.map(c=>({c,p:this.point(c)})).filter(({c,p})=>{
+      if(sourceId&&!neighbors(this.session.match!.battle,sourceId).includes(c.id))return false;
       // Include the building's painted box above its ground point, plus the existing count/tap area.
       const width=(c.type==='barracks'?([52,58,66] as const)[c.tier-1]!:62)*scale;
-      return Math.abs(p.x-x)<=Math.max(28,width/2)&&y>=p.y-Math.max(24,6+34*scale)&&y<=p.y+Math.max(32,22*scale-6);
+      return Math.abs(p.x-x)<=Math.max(28,width/2)+padding&&y>=p.y-Math.max(24,6+34*scale)-padding&&y<=p.y+Math.max(32,22*scale-6)+padding;
     }).sort((a,z)=>distance(a.p,{x,y})-distance(z.p,{x,y}));
     return candidates?.[0]?.c??null;
+  }
+  private dragTarget(x:number,y:number,sourceId:string):Camp|null{
+    return this.campAt(x,y)??this.campAt(x,y,8,sourceId);
   }
   draw(now:number):void{
     this.now=now;const s=this.session,c=this.ctx,{width:w,height:h}=this.viewport;
@@ -330,7 +334,7 @@ export class GameView {
     if(s.weekNotice){
       const nw=noticeWidth;this.box(noticeX,row,nw,168,'#F4EFE3F5',4,'#B7AD96');this.text('新周开启',noticeX+12,row+25,17,COLORS.ink,650);
       this.paragraph('旧锦囊、兵法、待选已到期',noticeX+12,row+54,nw-24,13,COLORS.muted,20);
-      this.paragraph('军功与历史最高保留',noticeX+12,row+98,nw-24,12,COLORS.player,18);
+      this.paragraph(p.weeklyRecord?`最近一周 ${p.weeklyRecord.lastWeekWins} 胜已归档，军功保留`:'军功与历史最高保留',noticeX+12,row+98,nw-24,12,COLORS.player,18);
       this.textButton('dismiss-week','知道了',noticeX+12,row+120,nw-24,44,()=>{s.weekNotice=false;});row+=180;
     }
     this.endScroll(first,noticeTop,noticeBottom,row+12);
@@ -381,7 +385,7 @@ export class GameView {
     row=this.paragraph('占城最多者胜，同城数比兵力。',22,row,w-44,14,COLORS.ink,22);
     row=this.paragraph(`本周锦囊 ${ACTIVE_IDS.reduce((n,id)=>n+p.activeInventory[id],0)} 张 · 兵法 ${PASSIVE_IDS.reduce((n,id)=>n+p.passiveLevels[id],0)} 层`,22,row+10,w-44,14,COLORS.player,22);
     this.button('prepare-rules',this.prepareRulesOpen?'收起对局规则':'查看对局规则',22,row+8,w-44,44,()=>{this.prepareRulesOpen=!this.prepareRulesOpen;this.scroll=0;},'quiet');row+=64;
-    if(this.prepareRulesOpen)row=this.paragraph('电脑各有乡勇 1 张，无被动加成。冠军 +30；第 2／3／4 名 −5／−8／−10；弃战 −10，最低 0。',22,row,w-44,13,COLORS.muted,21)+20;
+    if(this.prepareRulesOpen)row=this.paragraph('电脑各有乡勇 1 张，无被动加成。有效冠军 +30；失败、平局和放弃不扣分，不获策略或周胜。',22,row,w-44,13,COLORS.muted,21)+20;
     const cw=(w-64)/4;
     for(const [i,id]of ACTIVE_IDS.entries()){
       const x=20+i*(cw+8),open=p.unlockedCardIds.includes(id);
@@ -419,18 +423,18 @@ export class GameView {
       this.regions.push({id:'pause',label:'暂停',x:12,y:top+2,w:44,h:44,run:()=>{this.cancel();void s.pause();}});
     }
     const clockWidth=Math.min(88,w-200);
-    this.box((w-clockWidth)/2,top+7,clockWidth,33,'#E9E3D5DF',3,'#9B9076');
-    this.box(w-98,top+10,86,28,'#E9E3D5CC',3,'#B2A68E');
+    this.box((w-clockWidth)/2,top+7,clockWidth,33,'#302D27ED',3,'#AC8C59');
+    this.box(w-98,top+10,86,28,'#302D27E8',3,'#8C7755');
     const stats=battleStats(b),owned=stats.find(st=>st.faction==='P')!.camps;
     const alert=this.threats.update(b);if(alert.fresh&&s.page==='battle')this.onThreat();
-    this.text(b.deadlineMs!==null?time(b.deadlineMs-b.gameMs):time(b.gameMs),w/2,top+23,20,COLORS.ink,650,'center');
+    this.text(b.deadlineMs!==null?time(b.deadlineMs-b.gameMs):time(b.gameMs),w/2,top+23,20,'#F3E1BC',650,'center');
     const order=[...this.effects].reverse().find(({event:e,created})=>e.faction==='P'&&b.gameMs>=created&&b.gameMs-created<600&&ACTIVE_IDS.includes(e.reason as ActiveCardId)&&(e.type==='card'||e.type==='dispatch'&&e.reason==='march'));
     if(order){const id=order.event.reason as ActiveCardId;this.box(w/2-58,top+43,116,20,'#F1E9D8E3',8);cardSymbol(this.ctx,w/2-45,top+53,8,id);this.text(CARDS[id].name,w/2+9,top+53,12,COLORS.ink,650,'center');}
     else if(b.ruleRevision==='1.5')this.text('旧版直达',w/2,top+49,10,COLORS.muted,500,'center');
-    this.text(`${owned} 城 · ${b.factions.filter(f=>!f.eliminated).length} 方`,w-23,top+24,11,COLORS.muted,600,'right');
+    this.text(standingSummary(b),w-23,top+24,11,'#E5D4B2',600,'right');
     const selected=b.camps.find(c=>c.id===this.selected);
     const g=this.gesture,source=g?.source?b.camps.find(c=>c.id===g.source):undefined;
-    const target=g?this.campAt(g.point.x,g.point.y):null;
+    const target=g?(g.drag&&g.source?this.dragTarget(g.point.x,g.point.y,g.source):this.campAt(g.point.x,g.point.y)):null;
     const preview=source&&g?.drag&&!g.region?.id.startsWith('upgrade-camp-')&&(!this.card||this.card==='march')?dispatchPreview(b,source,target,this.card==='march'):null;
     const roadSource=this.gesture?.source??(selected?.owner==='P'?selected.id:null);
     drawSampleGround(this.ctx,b,p=>this.point(p),k);
@@ -440,7 +444,7 @@ export class GameView {
     if(crowded||s.profile?.settings.reducedMotion)this.retreats.reset();
     for(const ghost of this.retreats.frames(b.gameMs)){
       const p=this.point(ghost.position);this.ctx.save();this.ctx.globalAlpha=ghost.alpha;
-      soldier(this.ctx,p.x,p.y,ghost.troopType,ghost.faction);flag(this.ctx,p.x-6,p.y-19,4,ghost.faction);this.ctx.restore();
+      marchingSoldier(this.ctx,p.x,p.y,ghost.troopType,ghost.faction);flag(this.ctx,p.x-6,p.y-19,4,ghost.faction);this.ctx.restore();
     }
     const accents=this.activeAccents(),towerAims=new Map<string,number>(),bowLifts=new Map<string,number>();
     if(!s.profile?.settings.reducedMotion)for(const {event:e,created}of this.effects){
@@ -465,13 +469,16 @@ export class GameView {
     const showUpgrade=interactive&&!this.card&&(!g||g.region?.id.startsWith('upgrade-camp-'))&&!this.upgradePending&&!s.busy&&b.status==='running'&&!b.awaitingFirstDispatch;
     for(const camp of b.camps){
       const p=this.point(camp);obstacles.push({x:p.x-32,y:p.y-34,w:66,h:70});
+      this.ctx.font='600 16px sans-serif';
+      const countWidth=Math.max(34,Math.ceil(this.ctx.measureText(String(camp.garrison)).width)+14);
+      obstacles.push({x:p.x-countWidth/2-26,y:p.y+13,w:countWidth+26,h:22});
       const status=(value:string,y:number,size:number,symbol=false)=>{this.ctx.font=`600 ${size}px sans-serif`;const width=this.ctx.measureText(value).width+(symbol?14:6);obstacles.push({x:p.x-width/2,y:y-size/2-2,w:width,h:size+4});};
       const {stop,drum}=statuses.get(camp.id)!;
       if(stop)status(stop,p.y-39,11,true);
       if(drum)status(drum,p.y-(stop?54:39),11,true);
       if(camp.owner==='P'&&camp.id===alert.campId)status('末城受袭',p.y+45,11);
       if(showUpgrade&&(!selected||selected.id===camp.id)&&camp.owner==='P'&&camp.tier<3&&camp.garrison>=UPGRADE[camp.tier as 1|2].threshold){
-        const scale=Math.max(20,30*k)/28,width=camp.tier===1?40:54,height=camp.tier===1?34:45;
+        const scale=Math.max(20,30*k)/28,width=camp.tier===1?46:58,height=camp.tier===1?38:48;
         // The visible seal touches this tier's right eave; extra touch space extends outwards.
         const r={x:p.x+Math.max(12,width*.32*scale)-10,y:p.y-6+(22-height*.72)*scale-22,w:44,h:44};
         if(r.y>=bounds.y&&r.x>=bounds.x&&r.x+r.w<=bounds.x+bounds.w){upgradeTargets.set(camp.id,r);obstacles.push(r);}
@@ -482,47 +489,54 @@ export class GameView {
     // Reserve the dispatched column's digit width: real tower losses must not shrink or relocate its banner.
     const labels=this.armyLabels.layout(sorted.map(({army:a,point:p})=>({id:a.id,point:p,width:Math.max(36,22+String(a.initialCount).length*9)})),bounds,obstacles);
     const departures=this.drawEffects(bounds,[...obstacles,...labels.values(),...moving.map(({point:p})=>({x:p.x-10,y:p.y-22,w:20,h:32}))],accents);
+    const accentCost=this.effects.reduce((n,{event})=>n+(accents.has(event.id)?battleAccentCost(event):0),0);
+    const dustSlots=Math.max(0,Math.floor((80-accentCost)/3));
     const statusText=(value:string,x:number,y:number,size:number,color:string,symbol?:'feint'|'mobilize')=>{
       this.ctx.font=`600 ${size}px sans-serif`;const width=this.ctx.measureText(value).width+(symbol?14:6);
       this.ctx.fillStyle=COLORS.surface;this.ctx.fillRect(x-width/2,y-size/2-2,width,size+4);
       if(symbol)cardSymbol(this.ctx,x-width/2+6,y,4.5,symbol);
       this.text(value,x+(symbol?5:0),y,size,color,600,'center');
     };
-    for(const {event:e,created}of this.effects){
-      if(e.type!=='army-loss'||b.gameMs-created>=300)continue;
-      const a=b.armies.find(a=>a.id===e.targetId);if(!a)continue;
-      const p=this.point(armyPosition(a,b.gameMs));soldierHit(this.ctx,p.x,p.y,a.troopType,a.faction,b.gameMs-created,!!s.profile?.settings.reducedMotion||crowded);
-    }
     // Ground target marks stay below city artwork and every authoritative count.
     if(this.card&&this.card!=='march')for(const camp of b.camps){
       if(cardTargetPreview(b,this.card,camp).valid)this.targetHalo(this.point(camp),COLORS.player,false);
     }
     if(g?.drag&&source?.owner==='P'&&preview&&target&&target!==source)this.targetHalo(this.point(target),preview.valid?COLORS.player:COLORS.muted,true);
+    // Sort world actors by their ground contact, not by object category. Counts stay above them.
+    const actors:{depth:number;draw:()=>void}[]=[];
     for(const camp of b.camps){
       const p=this.point(camp),active=camp.id===this.selected||camp.id===this.gesture?.source;
       if(alert.campId===camp.id&&alert.emphasized&&!s.profile?.settings.reducedMotion){this.ctx.strokeStyle=COLORS.enemy1;this.ctx.lineWidth=3;this.ctx.strokeRect(p.x-31,p.y-32,62,69);}
       if(active){this.ctx.strokeStyle=COLORS.player;this.ctx.lineWidth=2.5;this.ctx.beginPath();this.ctx.arc(p.x,p.y,29,0,Math.PI*2);this.ctx.stroke();}
-      building(this.ctx,p.x,p.y-6,Math.max(20,30*k),camp.type,camp.tier,camp.owner,towerAims.get(camp.id));
+      actors.push({depth:p.y+16,draw:()=>building(this.ctx,p.x,p.y-6,Math.max(20,30*k),camp.type,camp.tier,camp.owner,towerAims.get(camp.id))});
     }
-    this.drawCombatAccents(accents);
-    for(const {army:a,point:p,march} of moving){
+    for(const [armyIndex,{army:a,point:p,march}] of moving.entries()){
+      actors.push({depth:p.y+9,draw:()=>{
       const angle=Math.atan2(a.to.y-a.from.y,a.to.x-a.from.x);
       const walked=distance(a.from,armyPosition(a,b.gameMs)),phase=[...a.id].reduce((n,c)=>(n*31+c.charCodeAt(0))%997,0)/997;
-      marchTrail(this.ctx,p,angle,a.faction,b.gameMs,!!s.profile?.settings.reducedMotion,crowded);
+      marchTrail(this.ctx,p,angle,a.faction,b.gameMs,!!s.profile?.settings.reducedMotion,crowded||armyIndex>=dustSlots);
       const people=crowded?1:a.remainingCount<5?1:a.remainingCount<10?2:a.remainingCount<20?3:a.remainingCount<40?4:5;
       if(march&&animateMarch){
         this.ctx.strokeStyle=factionColor(a.faction);this.ctx.lineWidth=1;this.ctx.beginPath();
         this.ctx.moveTo(p.x-16*Math.cos(angle),p.y-16*Math.sin(angle));this.ctx.lineTo(p.x-30*Math.cos(angle),p.y-30*Math.sin(angle));
         this.ctx.moveTo(p.x-18*Math.cos(angle)-4*Math.sin(angle),p.y-18*Math.sin(angle)+4*Math.cos(angle));this.ctx.lineTo(p.x-26*Math.cos(angle)-4*Math.sin(angle),p.y-26*Math.sin(angle)+4*Math.cos(angle));this.ctx.stroke();
       }
-      for(let i=people-1;i>=0;i--)soldier(this.ctx,p.x-Math.cos(angle)*i*12+Math.sin(angle)*(i===0?0:i%2?5:-3),p.y-Math.sin(angle)*i*12-Math.cos(angle)*(i===0?0:i%2?5:-3),a.troopType,a.faction,i===0?1:.7,animateMarch?Math.sin(walked/2.75+phase*6.28+i)*.8:0,i===0?bowLifts.get(a.id)??0:0,Math.cos(angle)<-.1?-1:1,infantryDistanceFrame(walked,i,animateMarch,phase));
+      for(let i=people-1;i>=0;i--)marchingSoldier(this.ctx,p.x-Math.cos(angle)*i*12+Math.sin(angle)*(i===0?0:i%2?5:-3),p.y-Math.sin(angle)*i*12-Math.cos(angle)*(i===0?0:i%2?5:-3),a.troopType,a.faction,i===0?1:.7,animateMarch?Math.sin(walked/2.75+phase*6.28+i)*.8:0,i===0?bowLifts.get(a.id)??0:0,Math.cos(angle)<-.1?-1:1,infantryDistanceFrame(walked,i,animateMarch,phase));
       if(!labels.has(a.id))flag(this.ctx,p.x-6,p.y-19,4,a.faction);
+      }});
     }
+    for(const actor of actors.sort((a,z)=>a.depth-z.depth))actor.draw();
+    for(const {event:e,created}of this.effects){
+      if(e.type!=='army-loss'||b.gameMs-created>=300)continue;
+      const a=b.armies.find(a=>a.id===e.targetId);if(!a)continue;
+      const p=this.point(armyPosition(a,b.gameMs));soldierHit(this.ctx,p.x,p.y,a.troopType,a.faction,b.gameMs-created,!!s.profile?.settings.reducedMotion||crowded);
+    }
+    this.drawCombatAccents(accents);
     for(const camp of b.camps){
       const p=this.point(camp),active=camp.id===this.selected||camp.id===this.gesture?.source;
       const departure=departures.get(camp.id);
       if(departure&&camp.owner)departureAccent(this.ctx,p.x,p.y,this.point(departure.target),camp.owner,departure.age*160/450);
-      campPennant(this.ctx,p.x,p.y+24,camp.garrison,camp.owner,active);
+      campPennant(this.ctx,p.x,p.y+24,camp.garrison,camp.owner,active,camp.tier);
       const {stop,drum}=statuses.get(camp.id)!;
       if(stop)statusText(stop,p.x,p.y-39,11,COLORS.enemy1,'feint');
       if(drum)statusText(drum,p.x,p.y-(stop?54:39),11,COLORS.player,'mobilize');
@@ -543,7 +557,7 @@ export class GameView {
     }
     for(const {army:a,point:p}of sorted){const r=labels.get(a.id);if(!r)continue;
       const hit=this.effects.filter(({event:e,created})=>e.type==='army-loss'&&e.targetId===a.id&&b.gameMs-created<300).reduce((n,{event:e})=>n+(e.amount??0),0);
-      drawArmyPennant(this.ctx,r,p,a.faction,a.remainingCount,hit);
+      drawArmyPennant(this.ctx,r,p,a.faction,a.remainingCount,hit,animateMarch?Math.sin(b.gameMs/140+a.departedAtMs)*1.2:0);
       if(hit)this.text(`−${hit}`,r.x+r.w/2,r.y>=bounds.y+18?r.y-8:r.y+r.h+9,12,COLORS.enemy1,700,'center');
     }
     if(!interactive)return;
@@ -560,13 +574,16 @@ export class GameView {
       this.regions.push({id,label:`升级${CAMP_CONFIG[camp.type].name}，消耗 ${UPGRADE[tier as 1|2].cost} 兵`,...r,run:()=>this.commitUpgrade(campId,tier,matchId)});
     }
     const fy=h-bottom-footer;
-    this.ctx.fillStyle='#D7C5A1F2';this.ctx.fillRect(0,fy,w,footer+bottom);this.ctx.fillStyle='#88704E';this.ctx.fillRect(0,fy,w,2);
+    this.ctx.fillStyle=preview||MAPS[b.mapId].tutorial?'#D7C5A1F2':'#302A23F5';this.ctx.fillRect(0,fy,w,footer+bottom);this.ctx.fillStyle='#A18A5E';this.ctx.fillRect(0,fy,w,2);
     if(preview){
       this.text(`派 ${preview.sent} · 留 ${preview.retained}`,20,fy+22,15,COLORS.ink,550);
       const digits=(preview.normalMs/1000).toFixed(2)===(preview.travelMs/1000).toFixed(2)?3:2;
       const eta=this.card==='march'?`普通 ${(preview.normalMs/1000).toFixed(digits)} → 加急 ${(preview.travelMs/1000).toFixed(digits)} 秒`:`${(preview.travelMs/1000).toFixed(1)} 秒到达`;
       const note=g?.drag?preview.valid?`${eta}${preview.towerIds.length?' · 当心箭塔':''}`:preview.reason:'沿亮路拖向邻城';
-      this.paragraph(note,20,fy+47,w-40,13,preview.towerIds.length?COLORS.enemy1:COLORS.muted,18);
+      this.paragraph(note,20,fy+43,w-40,13,preview.towerIds.length?COLORS.enemy1:COLORS.muted,18);
+      const incoming=target?incomingSummary(b,target):null;
+      if(preview.valid&&incoming)this.text(`另有${factionName(incoming.faction)} ${incoming.count}兵 · ${(incoming.etaMs/1000).toFixed(1)}秒到${incoming.teams>1?` · 共${incoming.teams}队`:''}`,20,fy+63,11,incoming.faction==='P'?COLORS.muted:COLORS.enemy1);
+      else if(preview.valid&&preview.volleyDamage!==null)this.text(`齐射按本队人数取整 · 当前预计 ${preview.volleyDamage} 兵`,20,fy+63,11,COLORS.muted);
     }else if(this.card){
       const target=g&&!g.region?this.campAt(g.point.x,g.point.y):null;
       this.box(8,fy-44,w-16,44,'#FFFCF3F2',18);
@@ -643,7 +660,7 @@ export class GameView {
     const w=this.viewport.width,h=this.viewport.height;this.regions=[];this.ctx.fillStyle=COLORS.paper;this.ctx.fillRect(0,0,w,h);
     const y=this.header('营地详情',()=>{this.campDetailsOpen=false;});
     building(this.ctx,w/2,y+48,48,camp.type,camp.tier,camp.owner);
-    campPennant(this.ctx,w/2,y+99,camp.garrison,camp.owner,true);
+    campPennant(this.ctx,w/2,y+99,camp.garrison,camp.owner,true,camp.tier);
     this.box(16,y+132,w-32,151);
     this.campPanel(camp,y+139);
     this.text(this.session.page==='pause'?'已暂停 · 返回后可继续对战':'查询中战斗继续',w/2,y+309,12,COLORS.muted,400,'center');
@@ -714,7 +731,7 @@ export class GameView {
   }
   private effectDuration(e:BattleEvent):number{
     if(['capture','dispatch','arrival','tower-shot','volley'].includes(e.type))return tacticalDuration(e.type);
-    if(e.type==='card'){const target=this.session.match!.battle.camps.find(c=>c.id===e.targetId);const renewed=e.reason==='mobilize'&&(target?.mobilizeUntil??0)>e.atMs+6000||e.reason==='feint'&&(target?.feintUntil??0)>e.atMs+4000;return renewed?160:220;}
+    if(e.type==='card'){const target=this.session.match!.battle.camps.find(c=>c.id===e.targetId);const renewed=e.reason==='mobilize'&&(target?.mobilizeUntil??0)>e.atMs+6000||e.reason==='feint'&&(target?.feintUntil??0)>e.atMs+4000;return renewed?280:600;}
     return e.type==='upgrade'?220:160;
   }
   private activeAccents():Set<number>{
@@ -729,6 +746,8 @@ export class GameView {
       if(e.type==='tower-shot'||e.type==='volley'){
         const from=e.type==='volley'?e.position:source,to=e.type==='volley'?target:e.position;
         if(from&&to)shotAccent(this.ctx,this.point(from),this.point(to),e.faction??null,age,e.type==='volley',reduced,crowded);
+      }else if(target&&e.type==='card'&&e.reason&&e.faction){
+        const p=this.point(target);cardAccent(this.ctx,p.x-29,p.y-27,e.reason as ActiveCardId,CAMP_CONFIG[target.type].troop,e.faction,e.amount??0,age,reduced||crowded,this.effectDuration(e));
       }else if(target&&e.type==='arrival'&&e.reason==='enemy'&&e.faction){
         tacticalAccent(this.ctx,'arrival',this.point(target),source?this.point(source):null,e.faction,age,reduced,crowded);
       }else if(target&&e.type==='capture'&&e.faction){
@@ -763,7 +782,6 @@ export class GameView {
         // Ownership already changed; only the decorative ground seal waits for contact.
         if(reduced||age>=180)tacticalAccent(this.ctx,'capture',this.point(target),null,e.faction!,reduced?age:(age-180)*800/620,!!reduced,b.armies.length>40);
       }
-      if(target&&e.type==='card'&&e.reason&&e.faction&&motion){const p=this.point(target);cardAccent(this.ctx,p.x-29,p.y-27,e.reason as ActiveCardId,CAMP_CONFIG[target.type].troop,e.faction,e.amount??0,age,!!reduced||b.armies.length>40,this.effectDuration(e));}
       if(e.type==='army-loss')continue; // Moving losses are attached to that army's stable count badge.
       const point=target;if(!point||age>=(e.type==='capture'?800:600))continue;
       const amount=e.amount??0;let label='',priority=0,color=COLORS.player;
@@ -808,7 +826,7 @@ export class GameView {
     this.regions.push({id:'back',label:'继续对战',x:x+pw-47,y:y+5,w:44,h:44,run:()=>void s.resume()});
     const contentTop=y+83,contentBottom=y+panelH-82,first=this.startScroll(contentTop,contentBottom);
     let row=contentTop+15-this.scroll;
-    row=this.paragraph(expired?'超过 24 小时不能继续。放弃会扣 10 军功，最低 0；回首页可保留本局。':s.temporary?'临时练兵 · 不影响原存档':'已暂停，战场为你保留',x+16,row,pw-32,13,COLORS.muted,20)+18;
+    row=this.paragraph(expired?(s.match?.meritPolicy==='growth-v1'?'超过 24 小时不能继续。放弃不扣军功；回首页可保留本局。':'超过 24 小时不能继续。旧局放弃扣 10 军功，最低 0；回首页可保留本局。'):s.temporary?'临时练兵 · 不影响原存档':s.match?.modeId==='arena-four'&&!s.match.meritPolicy?'旧局计分：第2/3/4名扣5/8/10，放弃扣10。':'已暂停，战场为你保留',x+16,row,pw-32,13,COLORS.muted,20)+18;
     const gap=(pw-48)/3,actionsX=x+24;
     this.iconButton('save-home',s.temporary?'退出练兵':'回首页',actionsX+(gap-44)/2,row,44,'home',()=>void s.pause('home'),true);
     this.iconButton('pause-settings','设置',actionsX+gap+(gap-44)/2,row,44,'settings',()=>this.open('settings'),true);
@@ -824,7 +842,7 @@ export class GameView {
   }
   private confirmForfeit():void{
     const p=this.session.profile,m=this.session.match,formal=!this.session.temporary&&m?.rankedCommitment;
-    this.modal={title:'放弃本局？',body:formal?`军功 ${p!.rankPoints} → ${Math.max(0,p!.rankPoints-10)}，实际扣 ${Math.min(10,p!.rankPoints)}。已用锦囊不返还。`:'本局不计军功。放弃后可重新练兵，不影响已保存的正式进度。',label:'确认放弃',run:()=>void this.session.forfeit()};
+    this.modal={title:'放弃本局？',body:formal&&this.session.match?.meritPolicy==='growth-v1'?'放弃不扣军功，不获策略或周胜。已用锦囊不返还。':formal?`军功 ${p!.rankPoints} → ${Math.max(0,p!.rankPoints-10)}，实际扣 ${Math.min(10,p!.rankPoints)}。已用锦囊不返还。`:'本局不计军功。放弃后可重新练兵，不影响已保存的正式进度。',label:'确认放弃',run:()=>void this.session.forfeit()};
   }
   private result():void{
     const s=this.session,p=s.profile,r=s.temporary?.battle.result??p?.latestResult?.result,record=s.temporary?null:p?.latestResult,w=this.viewport.width,start=this.header('战报',()=>void s.acknowledge()),bottom=this.viewport.height-this.viewport.bottom,y=start-this.scroll;
@@ -836,8 +854,9 @@ export class GameView {
     c.save();c.translate(w/2,y+heroH*(compact?.3:.44));c.scale(.86+.14*(1-Math.pow(1-entrance,3)),.86+.14*(1-Math.pow(1-entrance,3)));
     if(won)drawGateSeal(c,0,0,compact?36:54);else drawRankStandard(c,0,0,compact?48:72,0);c.restore();
     this.text(won?'夺城告捷':tied?'并列第 1':`本局第 ${r.playerRank} 名`,w/2,y+heroH-15,29,COLORS.ink,700,'center',true);
-    let row=y+heroH+26;
-    this.text(`${won?'本局胜出 · ':''}用时 ${time(r.atMs)}`,w/2,row,14,COLORS.muted,500,'center');row+=33;
+    let row=y+heroH+(compact?12:26);
+    if(!compact){this.text(`${won?'本局胜出 · ':''}用时 ${time(r.atMs)}`,w/2,row,14,COLORS.muted,500,'center');row+=25;}
+    row=this.paragraph(resultExplanation(r),24,row,w-48,compact?12:13,COLORS.muted,compact?18:21)+(compact?12:25);
     if(record?.modeId==='arena-four'){
       const delta=`军功 ${record.rankDeltaApplied>=0?'+':''}${record.rankDeltaApplied}`;
       const pointSize=this.lines(delta,w-88,32).length>1?20:32;
@@ -1021,11 +1040,15 @@ export class GameView {
     this.text(`${p.rankPoints%30} / 30`,w/2,row+30,12,COLORS.muted,500,'center');
     this.text(`下一级还需 ${30-p.rankPoints%30} 军功`,w/2,row+53,15,COLORS.ink,500,'center');
     row=this.paragraph(`曾达 ${rankName(p.highestRankPoints)} · ${p.highestRankPoints} 军功`,22,row+84,w-44,14,COLORS.muted,22)+15;
+    if(p.weeklyRecord){
+      row=this.paragraph(`周战绩纪念 · ${p.weeklyRecord.lastWeekId} 起的一周 ${p.weeklyRecord.lastWeekWins} 胜`,22,row,w-44,14,COLORS.player,22)+8;
+      row=this.paragraph(`已归档 ${p.weeklyRecord.archivedWeeks} 周 · 冠军累计 ${p.weeklyRecord.totalWins} · 最佳单周 ${p.weeklyRecord.bestWins} 胜`,22,row,w-44,13,COLORS.muted,21)+15;
+    }
     this.textButton('rank-rules',this.rankRulesOpen?'收起规则':'军功规则 ›',w/2-70,row,140,44,()=>{this.rankRulesOpen=!this.rankRulesOpen;if(!this.rankRulesOpen)this.scroll=0;});row+=64;
     if(this.rankRulesOpen){
       const names=['军司马','都尉','校尉','中郎将','偏将军','车骑将军','骠骑将军','大将军'];
       for(const [i,n]of names.entries()){rankBadge(this.ctx,26,row,10,30+i*150);this.text(n,44,row,15,COLORS.ink,550);this.text(i===7?'1080 起，小级持续增加':`${30+i*150} 军功起 · 五个小级`,w-24,row,12,COLORS.muted,400,'right');row+=31;}
-      row=this.paragraph('军衔为游戏化设计，并非历史统一晋升制度。军衔没有战斗属性。胜利 +30；第 2／3／4 名 −5／−8／−10。可能降衔，历史最高保留。',24,row+19,w-48,13,COLORS.muted,22);
+      row=this.paragraph('军衔为游戏化设计，并非历史统一晋升制度。军衔没有战斗属性。新局有效冠军 +30；失败、平局和放弃不扣军功。军衔与历史最高保留；旧局仍按开局时约定计分。',24,row+19,w-48,13,COLORS.muted,22);
     }
     this.endScroll(first,start-10,bottom,row+12);
   }
@@ -1100,8 +1123,8 @@ export class GameView {
       ['弓兵与塔营','弓兵出发至少 0.5 秒、进入目的营地 70 范围后，只检查齐射一次，伤害为当时人数的 30%向下取整。友方、空营、人数不足均跳过且不补射。塔营固定射程 120，打路过敌军或敌营，每次 1 兵。驻营弓兵不自动射击。'],
       ['到达与整编','到达按 1∶1 交战，相等只清零，不占领。增援和攻城存活者按目标营地整编；只有从骑营再次派兵才变快。多个攻击阵营同刻到达时，只有大于其他攻击方总和的一方留下差额攻城。'],
       ['驻兵升级','一级达到 30 兵可花 10 升二级，二级达到 70 兵可花 25 升三级。容量 50／90／140，产速倍率 1／1.3／1.6。出兵不降级，易主保留等级。'],
-      ['四方与军功','正式局上限四分钟，到时按城数、总兵力排序，两项都同则并列。有效独立冠军且曾派兵才能获得 +30 军功、一次选卡和一次周胜。失败第 2／3／4 名扣 5／8／10，弃战扣 10，最低 0。'],
-      ['策略与周界','冠军在固定混合候选中只选一张。主动使用扣库存，被动每周累计、每局自动生效。北京时间周一清库存、被动层数、旧待选和周胜；军功、最高和永久解锁保留。'],
+      ['四方与军功','正式局上限四分钟，到时按城数、总兵力排序，两项都同则并列。有效独立冠军且曾派兵才能获得 +30 军功、一次选卡和一次周胜。新局失败、平局与放弃不扣军功，不发参与分。旧局仍按开局约定计分。'],
+      ['策略与周界','冠军在固定混合候选中只选一张。主动使用扣库存，被动每周累计、每局自动生效。北京时间周一清库存、被动层数、旧待选和周胜；军功、最高和永久解锁保留，已知周胜归档为永久纪念。'],
       ['保存与隐私','每 5 游戏秒保存检查点，消费、升级、结果、领奖立即完整保存。后台不补算；恢复需明确继续，现实超过 24 小时不能续战。离线核心使用本机存储；好友榜不等于云存档。'],
       ['版本与原创',`谋定山河 0.1.0 · 新局规则 v1.6，保留 v1.5 旧局。原创设色山水与建筑插画，士兵、军旗和界面由 Canvas 绘制。画面资源 ${getArtStatus().ready}/${getArtStatus().total}。本地玩家与电脑对战。`],
     ];
@@ -1171,7 +1194,7 @@ export class GameView {
     if(this.regions.some(r=>!(g.drag&&g.source&&r.id.startsWith('upgrade-camp-'))&&x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h)){this.cancel();return;}
     if(g.drag&&this.card&&this.card!=='march'){this.cancel();return;}
     if(g.drag&&!g.source)return;
-    const target=this.campAt(x,y);
+    const target=g.drag&&g.source?this.dragTarget(x,y,g.source):this.campAt(x,y);
     if(g.drag&&g.source){if(target&&target.id!==g.source){
       const card=this.card,version=this.inputVersion,matchId=this.session.match?.battle.id;void this.session.action({kind:'dispatch',sourceId:g.source,targetId:target.id,march:card==='march'}).then(ok=>{if(ok&&version===this.inputVersion&&matchId===this.session.match?.battle.id&&this.card===card)this.card=null;});
     }return;}
