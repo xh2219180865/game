@@ -1,5 +1,32 @@
 # 原创美术资源
 
+## 2026-11-04 山川地貌图集（正式运行新增一张）
+
+内置 imagegen 以现有 `warfront-camps.png` 为画风参考制作6组低矮山脊／山石：3列为平原、雪地、砂地，2行为变化。母版 `warfront-landforms-master.png`（1536×1024）保留，运行版 `warfront-landforms.png`（384×256，95,420字节）经sips等比编码；该次只调整新素材发布尺寸，未降低旧营地／军士图集质量。内置原文件 `exec-298f6ac5-62df-44e3-b305-6f38c98ecc02.png`。母版及运行版均是真RGBA透明区，实际alpha与裁切窗由测试解码，不把预览底色当透明证明。
+
+运行清单新增landforms后共10张；6个源窗由src/render/assets.ts的LANDFORM_SPRITE_CROPS定义，山石在规划包络内等比底对齐，失败使用同包络Canvas回退。河流、水纹与木桥按真实道路在Canvas绘制，不把整张概念地图带入游戏；运行不依赖母版或.tmp文件。微信4MiB与至少512KiB余量的既有检查保持。
+
+完整生成提示词（内置 imagegen；仅参考原营地画风，不编辑原图）：
+
+```text
+Use case: stylized-concept
+Asset type: ONE production transparent terrain sprite atlas for an original late-Han Chinese military outpost game. EXACT 3 equal columns by 2 equal rows, landscape canvas 3:2. Six fully isolated compact hand-painted rocky ridges. Reference image is for the existing camp sprites' brush detail, miniature high oblique projection and restrained natural colors only. No buildings in output.
+Each cell has ONE entire asymmetrical low mountain ridge cluster made of 3-5 unequal rounded broken crags with smaller loose scree at the feet, generous 12% transparent margins, all roots and tiny bushes INSIDE its cell. Camera high oblique 3/4, light from upper left, all on same plane and foot baseline, ratio each cluster width:height about 1.6:1. Readable at 65px wide on a phone, crisp broken outer silhouettes and coarse warm rock strata; painterly rough detail matching the reference. These must look organic and weathered, NEVER regular triangles, pyramids, crystal points, polygon meshes or flat vector symbols. Not huge towering scenic mountains, not distant blue fog, no black outlines. No rectangular ground tiles, no sky or landscape background.
+Top left: weathered grey olive rocks with ochre faces, sparse dark small pines and dry shrubs, sprawling low ridge.
+Top middle: cold grey ridge with small pale snow patches settled in crevices, sparse small firs; stone remains visible, not white glacier.
+Top right: warm grey sandstone broken low ridge with tan faces, dry grass and sparse scrub; not orange desert.
+Bottom left: second grassland ridge variation, slightly narrower, blunt outcrops, dark olive sparse brush.
+Bottom middle: second cold rocky snow variation, low broken boulders with snow in shade and tiny firs.
+Bottom right: second warm sandstone variation, flat broken slabs and scree with tiny scrub.
+True transparent alpha background around all six sprites, no painted checkerboard, no frame, no grid lines, no text, no letters, no labels, no flags, no units, no bridges or water. No cast shadows outside each cell. Restrained muted earth pigments; avoid fantasy, neon, glow, saturated green, photorealistic 3D and exaggerated cartoon proportions.
+
+```
+
+
+## 十策图标设计（2026-11-04，未接入运行）
+
+[设计资产](../../artifacts/strategy-design-v1/README.md) 保存内置 imagegen 概念板、十张独立透明 SVG 母稿、完整提示词与交互分镜；规格见 05 G8／09 H9。母稿和概念板均未加入本目录正式素材清单，不替换 a-cards，不增加运行图片或微信包体。正式采用时需另做 PNG／Canvas 接入及真机核验。
+
 ## 2026-11-03 城池与四军整套重做
 
 本节为当前城池／兵种素材入口，替代下方旧图集运行说明。内置 imagegen 新制四张 RGBA 图集，取代 `a-battle.png`、`a-battle-sample.png`、`a-troop-motion.png`、`a-cavalry-motion.png` 的运行路径，旧源文件保留但不打包；运行图片仍为 9 张，不叠加新旧两套。全六图、战前／图鉴／军令继续共用同一绘制入口。

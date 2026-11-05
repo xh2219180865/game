@@ -13,10 +13,50 @@ export const ART_SOURCES = {
   sample:'assets/art/warfront-infantry.png',
   motion:'assets/art/warfront-foot.png',
   cavalry:'assets/art/warfront-cavalry.png',
+  landforms:'assets/art/warfront-landforms.png',
 } as const;
+export const LANDFORM_SPRITE_CROPS={
+  "landform-plains-0": [
+    0.001953125,
+    0.1474609375,
+    0.3313802083333333,
+    0.2998046875
+  ],
+  "landform-snow-0": [
+    0.3352864583333333,
+    0.1484375,
+    0.326171875,
+    0.2880859375
+  ],
+  "landform-desert-0": [
+    0.6666666666666666,
+    0.1689453125,
+    0.3333333333333333,
+    0.279296875
+  ],
+  "landform-plains-1": [
+    0.0078125,
+    0.6181640625,
+    0.3209635416666667,
+    0.2646484375
+  ],
+  "landform-snow-1": [
+    0.3352864583333333,
+    0.6318359375,
+    0.3229166666666667,
+    0.24609375
+  ],
+  "landform-desert-1": [
+    0.6666666666666666,
+    0.640625,
+    0.330078125,
+    0.2431640625
+  ]
+} as const;
+export type LandformSpriteId=keyof typeof LANDFORM_SPRITE_CROPS;
 type SourceId=keyof typeof ART_SOURCES;
 type CardKind='mobilize'|'march'|'supply'|'feint'|'farming'|'logistics'|'fortification';
-export type ArtId=SourceId|`card-${CardKind}`|BattleSpriteId|SampleSpriteId|MotionSpriteId;
+export type ArtId=SourceId|`card-${CardKind}`|BattleSpriteId|SampleSpriteId|MotionSpriteId|LandformSpriteId;
 export type ArtImage=Pick<HTMLImageElement,'src'|'width'|'height'|'onload'|'onerror'>;
 export type ArtImageFactory=()=>ArtImage;
 type SourceState={image:ArtImage|null;loading:Promise<void>|null;failed:boolean};
@@ -76,8 +116,9 @@ export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,
   if(![x,y,width,height].every(Number.isFinite)||width<=0||height<=0)return false;
   const sample=Object.prototype.hasOwnProperty.call(SAMPLE_SPRITE_CROPS,id)?SAMPLE_SPRITE_CROPS[id as SampleSpriteId]:undefined;
   const motion=Object.prototype.hasOwnProperty.call(TROOP_MOTION_CROPS,id)?TROOP_MOTION_CROPS[id as MotionSpriteId]:undefined;
-  const sprite=sample??motion??(Object.prototype.hasOwnProperty.call(BATTLE_SPRITE_CROPS,id)?BATTLE_SPRITE_CROPS[id as BattleSpriteId]:undefined);
-  const crop=sprite?{source:sample?'sample' as const:motion?(id.startsWith('motion-cavalry-')?'cavalry' as const:'motion' as const):'battlefield' as const,column:0,row:0,columns:1,rows:1}:region(id);if(!crop)return false;
+  const landform=Object.prototype.hasOwnProperty.call(LANDFORM_SPRITE_CROPS,id)?LANDFORM_SPRITE_CROPS[id as LandformSpriteId]:undefined;
+  const sprite=landform??sample??motion??(Object.prototype.hasOwnProperty.call(BATTLE_SPRITE_CROPS,id)?BATTLE_SPRITE_CROPS[id as BattleSpriteId]:undefined);
+  const crop=sprite?{source:landform?'landforms' as const:sample?'sample' as const:motion?(id.startsWith('motion-cavalry-')?'cavalry' as const:'motion' as const):'battlefield' as const,column:0,row:0,columns:1,rows:1}:region(id);if(!crop)return false;
   const state=states.get(crop.source),image=state?.image;if(!image)return false;
   let sw=image.width/crop.columns,sh=image.height/crop.rows,sx=crop.column*sw,sy=crop.row*sh;
   if(sprite){[sx,sy,sw,sh]=[sprite[0]*image.width,sprite[1]*image.height,sprite[2]*image.width,sprite[3]*image.height];}

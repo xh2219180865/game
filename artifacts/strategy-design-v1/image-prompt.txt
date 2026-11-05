@@ -1,0 +1,16 @@
+Use case: stylized-concept
+Asset type: ONE cohesive art-direction board of ten small game UI icons, arranged in an EXACT 5 columns by 2 rows equal square grid, no gutters, landscape 5:2 canvas if possible (otherwise 3:2 with grid filling canvas). This is a concept contact sheet, not ten independent file exports.
+Primary request: Original hand-painted icons for the Chinese late-Han military outpost strategy game 谋定山河. Use the attached local artwork ONLY as a palette and painterly-material reference; do NOT reproduce its busy landscapes, giant scenes, magical effects, or fictional insignia. Design readable object silhouettes suitable for 44px UI. Each icon occupies central 65% of its equal cell. Equal optical size. Identical warm ivory untextured background across entire board; no drawn separators, frames, labels, letters, numerals, watermark, badges, UI, status text, or any pseudo-Chinese marks. No shadows crossing cell boundaries.
+Style: restrained painterly miniature military still lifes, dark ink-brown edges, worn bronze fittings, red lacquered wood, gray tiles, muted teal cloth, ochre grain. Flat modest volume, three-quarter view, crisp readable outer contour, two or three objects maximum per cell, no full landscapes. Historic inspiration rather than a claim of reconstruction. No photorealistic lighting, no 3D loot emblems, no neon, no magic shields, no ornate gold circles, no portraits.
+Exact cell order LEFT TO RIGHT:
+TOP ROW 1: mobilize — squat red wooden war drum with pale hide, two short beaters; recognizable drum silhouette.
+TOP ROW 2: march — upright slim muted teal military pennant leaning right, with TWO small wooden forward chevrons, conveying a single urgent marching order. NO horse.
+TOP ROW 3: supply — three simple helmeted military bust silhouettes grouped behind a short wooden muster tally. NO drum or grain.
+TOP ROW 4: feint — one tied grain sack, tiny orange ember flame beside it and one dark low smoke curl; mostly intact sack, NOT a burning town.
+TOP ROW 5: beacon — small square gray masonry signal brazier on a short stone pedestal, small warm flame, TWO short converging wooden directional arrows pointing inward at its base. Distinct from burning sack.
+BOTTOM ROW 1: converge — two small different wooden command pennants on left and right, each over a converging arrow meeting before a single compact closed wooden outpost gate. No huge army, no explosions.
+BOTTOM ROW 2: barricade — crossed rough timber sharpened anti-cavalry stakes, 3 sturdy X beams lashed with rope on short ground feet, no shield or stone fortress.
+BOTTOM ROW 3: farming — heavy curved golden millet ears beside a tied grain sack. NO fire, no green magical leaves.
+BOTTOM ROW 4: logistics — two clear worn sandal SOLE PRINTS in diagonal marching direction, small rolled bamboo dispatch tied in muted teal. No horse or flag, clearly distinguish from march.
+BOTTOM ROW 5: appeasement — compact OPEN wooden outpost gate with a small welcoming open hand holding a tied grain pouch in foreground; no smiley, no extra soldiers, no heart, no handshake clutter.
+The whole board must feel like one understated handcrafted military equipment set. Maintain spatial grid precisely so CSS can preview each cell.

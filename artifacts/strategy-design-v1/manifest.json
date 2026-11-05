@@ -1,0 +1,91 @@
+{
+  "status": "design-preview",
+  "runtimeEnabled": false,
+  "board": "icon-art-direction.png",
+  "boardRole": "opaque-concept-contact-sheet",
+  "viewBox": [
+    0,
+    0,
+    96,
+    96
+  ],
+  "icons": [
+    {
+      "id": "mobilize",
+      "file": "icons/mobilize.svg",
+      "type": "active",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "march",
+      "file": "icons/march.svg",
+      "type": "active",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "supply",
+      "file": "icons/supply.svg",
+      "type": "active",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "feint",
+      "file": "icons/feint.svg",
+      "type": "active",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "beacon",
+      "file": "icons/beacon.svg",
+      "type": "active",
+      "runtimeStatus": "proposed"
+    },
+    {
+      "id": "converge",
+      "file": "icons/converge.svg",
+      "type": "active",
+      "runtimeStatus": "proposed"
+    },
+    {
+      "id": "barricade",
+      "file": "icons/barricade.svg",
+      "type": "active",
+      "runtimeStatus": "proposed"
+    },
+    {
+      "id": "farming",
+      "file": "icons/farming.svg",
+      "type": "passive",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "logistics",
+      "file": "icons/logistics.svg",
+      "type": "passive",
+      "runtimeStatus": "existing"
+    },
+    {
+      "id": "appeasement",
+      "file": "icons/appeasement.svg",
+      "type": "passive",
+      "runtimeStatus": "proposed"
+    }
+  ],
+  "visualStyle": "existing-hand-painted-late-han-battlefield",
+  "iconMasterRole": "structural-reference-and-fallback-not-final-flat-style",
+  "paintedIconPreview": "icon-art-direction.png",
+  "referenceAssets": [
+    {
+      "file": "reference/warfront-ground.jpg",
+      "source": "assets/art/warfront-ground.jpg",
+      "sha256": "cc2af93e039e8bc102859ccffbba6af5c18117fc9be007af5763034bf7d3d2b7",
+      "runtimeChange": false
+    },
+    {
+      "file": "reference/warfront-camps.png",
+      "source": "assets/art/warfront-camps.png",
+      "sha256": "b9e2e2bf338d4daa2b0bf9d1706f8aa468ea8be2c9489a04c61088c672a0ed1a",
+      "runtimeChange": false
+    }
+  ]
+}

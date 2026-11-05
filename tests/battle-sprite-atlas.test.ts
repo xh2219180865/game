@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
 import {BATTLE_SPRITE_CROPS} from '../src/render/battle-sprite-regions.ts';
-import {ART_SOURCES} from '../src/render/assets.ts';
+import {ART_SOURCES,LANDFORM_SPRITE_CROPS} from '../src/render/assets.ts';
 import {SAMPLE_SPRITE_CROPS} from '../src/render/sample-sprite-regions.ts';
 import {TROOP_MOTION_CROPS} from '../src/render/troop-motion-regions.ts';
 import {CAMP_ROOF_PANELS,CAMP_WALL_PANELS} from '../src/render/camp-architecture.ts';
@@ -105,5 +105,22 @@ test('new motion atlases have real alpha, clear crop boundaries and distinct fee
     }
     assert.ok(new Set(masks).size>=4,`${type} has independent foot silhouettes`);
     assert.ok([...masks[0]!].filter((p,i)=>p!==masks[2]![i]).length>30,`${type} has visible passing-leg articulation`);
+  }
+});
+
+
+test('landform atlas: six clear-alpha ridges use isolated crops and a bounded production texture',async()=>{
+  const {width,height,out,bytes}=await pixels(ART_SOURCES.landforms);
+  assert.equal(width,384);assert.equal(height,256);assert.ok(bytes<100*1024);
+  let clear=0;for(let i=3;i<out.length;i+=4)if(out[i]===0)clear++;
+  assert.ok(clear>width*height*.6,'mountains must not bring a rectangular painted background');
+  const crops=Object.entries(LANDFORM_SPRITE_CROPS);assert.equal(crops.length,6);
+  for(const [id,[x,y,w,h]]of crops){
+    assert.ok(x>=0&&y>=0&&w>0&&h>0&&x+w<=1&&y+h<=1,id);
+    const snow=id.includes('snow'),sand=id.includes('desert'),column=snow?1:sand?2:0,row=id.endsWith('1')?1:0;
+    assert.ok(x>=column/3-1e-8&&x+w<=(column+1)/3+1e-8);
+    assert.ok(y>=row/2&&y+h<=(row+1)/2);
+    let solid=0;for(let py=Math.ceil(y*height);py<Math.floor((y+h)*height);py++)for(let px=Math.ceil(x*width);px<Math.floor((x+w)*width);px++)if(out[(py*width+px)*4+3]!>=180)solid++;
+    assert.ok(solid>w*width*h*height*.25,`${id} retains visible rock instead of empty gutters`);
   }
 });

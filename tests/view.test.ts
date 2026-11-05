@@ -1603,7 +1603,7 @@ test('H17 N63: stationary render time never changes real camp or marching counts
   const before=JSON.stringify(b);v.draw(100);const first=texts.filter(t=>t.font.startsWith('600 14px')&&t.text==='10');assert.equal(first.length,1,'one ordinary army must have one exact count label');
   for(const wallTime of [200,5000,90000]){texts.length=0;v.draw(wallTime);assert.deepEqual(texts.filter(t=>t.font.startsWith('600 14px')&&t.text==='10'),first);assert.equal(JSON.stringify(b),before);}
   assert.equal(b.armies[0]!.remainingCount,10);assert.equal(b.camps.find(c=>c.id==='A01-P1')!.garrison,10);
-  for(const c of b.camps)assert.ok(texts.some(t=>t.text===String(c.garrison)&&t.font==='600 16px sans-serif'),'every city keeps its exact original integer');
+  for(const c of b.camps)assert.ok(texts.some(t=>t.text===String(c.garrison)&&t.font==='600 16px Georgia, "Songti SC", serif'),'every city keeps its exact original integer');
 });
 
 test('U04 N39: rank rules are folded initially, explicitly readable and never spend inventory or write progress',async()=>{
@@ -1632,8 +1632,8 @@ test('F12 H17 N63: real tower casualties keep 19 troops and a local −1 togethe
       advanceBattle(b,2000+age);texts.length=0;const before=JSON.stringify(b);v.draw(5000+age);
       const badge=texts.filter(t=>t.text==='19'&&t.font.startsWith('600 14px'));assert.equal(badge.length,1,`${width}/${reduced}/${age}: the hit army keeps its exact current count`);
       const localLoss=texts.filter(t=>t.text==='−1');assert.equal(localLoss.length,age<300?1:0,'one actual loss, without a second board-wide caption');
-      if(age<300){assert.equal(badge[0]!.color,'#FFF3D5');assert.equal(localLoss[0]!.color,COLORS.enemy1);assert.ok(Math.abs(localLoss[0]!.x-badge[0]!.x)<=24&&Math.abs(localLoss[0]!.y-badge[0]!.y)<=24,'loss stays attached to the same army badge');}
-      else assert.equal(badge[0]!.color,'#FFF3D5');
+      if(age<300){assert.equal(badge[0]!.color,'#3E382B');assert.equal(localLoss[0]!.color,COLORS.enemy1);assert.ok(Math.abs(localLoss[0]!.x-badge[0]!.x)<=24&&Math.abs(localLoss[0]!.y-badge[0]!.y)<=24,'loss stays attached to the same army badge');}
+      else assert.equal(badge[0]!.color,'#3E382B');
       const stationary=structuredClone(texts);texts.length=0;v.events(events);v.draw(90000+age);
       assert.deepEqual(texts,stationary,'UI time and duplicate events do not animate, move or double the loss readout');assert.equal(JSON.stringify(b),before);assert.equal(b.armies[0]!.remainingCount,19);assert.equal(d.depth(),0);
     }

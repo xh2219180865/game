@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>谋定山河 · 十策军令设计</title>
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+<main>
+<header><div><p class="eyebrow">谋定山河 · 汉末军阵</p><h1>十策军令</h1><p>器物识策，调兵见谋。</p></div><span class="seal">设计预览<br>未接入游戏</span></header>
+<details class="art"><summary>查看手绘图标风格概念稿</summary><img src="icon-art-direction.png" alt="十策图标概念稿，上排征兵、兼行、乡勇、火袭、求援；下排齐攻、拒马、屯田、神速、招抚"></details>
+<section class="workbench" aria-label="军令动效分镜">
+<nav id="cards" aria-label="选择策略"></nav>
+<div class="stage">
+<div class="stage-heading"><div><span id="kind" class="eyebrow"></span><h2 id="title"></h2></div><span id="phase" class="phase" aria-live="polite"></span></div>
+<canvas id="battle" width="620" height="410" role="img" aria-label="所选策略的战场示意与动效"></canvas>
+<p id="scene" class="scene"></p>
+<div class="controls"><button id="play" class="primary">播放</button><button id="replay">重播</button><label><input type="checkbox" id="reduced">减少动态</label><label><input type="checkbox" id="gray">灰度</label></div>
+<label class="time-label" for="time">游戏时间 <output id="timeValue">0 ms</output></label><input id="time" type="range" min="0" max="6000" value="0" step="1">
+<div id="readout" class="readout" aria-live="polite"></div>
+</div>
+<aside><div class="detail-top"><span class="painted-icon detail-painted"><img id="detail-icon" alt=""></span><div><span id="status" class="eyebrow"></span><h2 id="detail-title"></h2></div></div><p id="effect"></p><dl><dt>怎样使用</dt><dd id="input"></dd><dt>动效关键帧</dt><dd id="motion"></dd><dt>代价与边界</dt><dd id="limits"></dd></dl><div class="size-check" aria-label="图标尺寸对照"><figure><img id="icon32" width="32" height="32" alt="32像素图标"><figcaption>32px</figcaption></figure><figure><img id="icon44" width="44" height="44" alt="44像素图标"><figcaption>44px</figcaption></figure><figure><img id="icon72" width="72" height="72" alt="72像素图标"><figcaption>72px</figcaption></figure></div><label class="icon-state-label">图标状态 <select id="icon-state"><option value="normal">已解锁</option><option value="locked">未解锁</option><option value="empty">库存为 0</option></select></label><p class="note">下方为轮廓母稿识别检查；正式卡面保持上方手绘材质，图鉴不展示个人库存。</p></aside>
+</section>
+<footer>隔离分镜，无玩家存档、消费或奖励。道路不按地图比例；除征兵示例外不推进自然产兵，示例输入均写在场景说明。图标与动画为设计资产，规则以项目文档为准。</footer>
+</main>
+<script src="preview.js"></script>
+</body></html>

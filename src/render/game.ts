@@ -7,11 +7,12 @@ import { armyPosition, distance } from '../core/geometry.ts';
 import { MAPS, neighbors } from '../core/maps.ts';
 import { ACTIVE_IDS, CARD_IDS, CARDS, lessonOpen, nextWeekAt, PASSIVE_IDS, rankName } from '../core/progress.ts';
 import type { ActiveCardId, BattleEvent, Camp, CardId, MapId, Point } from '../core/types.ts';
-import { arrivalAccent, arrow, building, campPennant, cardAccent, cardSymbol, COLORS, departureAccent, factionColor, factionName, flag, marchingSoldier, passiveRewardSymbol, rankBadge, rounded, soldierHit } from './art.ts';
+import { arrivalAccent, arrow, building, campPennant, CAMP_COUNT_FONT, cardAccent, cardSymbol, COLORS, departureAccent, factionColor, factionName, flag, marchingSoldier, passiveRewardSymbol, rankBadge, rounded, soldierHit } from './art.ts';
 import { battleAccentCost, cardTargetPreview, dispatchPreview, incomingSummary, resultExplanation, standingSummary, isMarching, LastCampAlerts, StableArmyLabels, placeArmyLabels, selectBattleAccents } from './battle-presentation.ts';
 import type { Rect } from './battle-presentation.ts';
 import { RetreatPresentation } from './retreat.ts';
 import { drawTerrain } from './terrain.ts';
+import { battlefieldLandforms, drawBattlefieldLandforms, drawBattlefieldBridges } from './battlefield-landforms.ts';
 import { drawRoads, marchTrail, shotAccent, tacticalAccent, tacticalDuration } from './tactical-art.ts';
 import { drawHomeScene } from './home-scene.ts';
 import { drawHomeAtmosphere } from './home-atmosphere.ts';
@@ -351,9 +352,13 @@ export class GameView {
   private home():void{this.paintedHome();}
   private miniature(mapId:MapId,y:number,height:number):void{
     const m=MAPS[mapId],w=this.viewport.width,k=Math.min((w-56)/360,height/540),x=(w-360*k)/2;
-    this.ctx.save();rounded(this.ctx,20,y,w-40,height,12);this.ctx.clip();this.ctx.translate(20,y);drawTerrain(this.ctx,w-40,height,m.camps.map(c=>({x:x+c.x*k-20,y:c.y*k})),mapId);this.ctx.restore();
+    const centers=m.camps.map(c=>({x:x+c.x*k-20,y:c.y*k}));
+    const routes=m.roads.map(([a,z])=>({from:centers[m.camps.findIndex(c=>c.id===a)]!,to:centers[m.camps.findIndex(c=>c.id===z)]!}));
+    const landforms=battlefieldLandforms(w-40,height,centers,routes,mapId);
+    this.ctx.save();rounded(this.ctx,20,y,w-40,height,12);this.ctx.clip();this.ctx.translate(20,y);drawTerrain(this.ctx,w-40,height,centers,mapId,routes);drawBattlefieldLandforms(this.ctx,landforms,mapId);this.ctx.restore();
     this.ctx.strokeStyle='#8C896C';this.ctx.lineWidth=1.2;
     for(const [from,to]of m.roads){const a=m.camps.find(c=>c.id===from)!,z=m.camps.find(c=>c.id===to)!;this.ctx.beginPath();this.ctx.moveTo(x+a.x*k,y+a.y*k);this.ctx.lineTo(x+z.x*k,y+z.y*k);this.ctx.stroke();}
+    this.ctx.save();rounded(this.ctx,20,y,w-40,height,12);this.ctx.clip();this.ctx.translate(20,y);drawBattlefieldBridges(this.ctx,landforms);this.ctx.restore();
     for(const c of m.camps)building(this.ctx,x+c.x*k,y+c.y*k,Math.max(10,18*k),c.type,c.tier,c.owner);
   }
   private lessons():void{
@@ -416,7 +421,9 @@ export class GameView {
     const terrainPoint=(p:Point)=>this.point(p);
     const terrainEdges=b.ruleRevision==='1.6'?MAPS[b.mapId].roads:b.camps.flatMap((c,i)=>b.camps.slice(i+1).map(z=>[c.id,z.id] as const));
     const terrainRoutes=terrainEdges.flatMap(([a,z])=>{const from=b.camps.find(c=>c.id===a),to=b.camps.find(c=>c.id===z);return from&&to?[{from:terrainPoint(from),to:terrainPoint(to)}]:[];});
-    drawTerrain(this.ctx,w,h-bottom-footer,b.camps.map(terrainPoint),b.mapId,terrainRoutes);
+    const centers=b.camps.map(terrainPoint),landforms=b.ruleRevision==='1.6'?battlefieldLandforms(w,h-bottom-footer,centers,terrainRoutes,b.mapId):null;
+    drawTerrain(this.ctx,w,h-bottom-footer,centers,b.mapId,terrainRoutes);
+    if(landforms){this.ctx.save();this.ctx.beginPath();this.ctx.rect(0,0,w,h-bottom-footer);this.ctx.clip();drawBattlefieldLandforms(this.ctx,landforms,b.mapId);this.ctx.restore();}
     const pausePressed=this.gesture?.region?.id==='pause'&&!this.gesture.drag;
     if(interactive){
       drawGameControl(this.ctx,18,top+8,32,'pause',pausePressed);
@@ -439,6 +446,7 @@ export class GameView {
     const roadSource=this.gesture?.source??(selected?.owner==='P'?selected.id:null);
     drawSampleGround(this.ctx,b,p=>this.point(p),k);
     drawRoads(this.ctx,b,p=>this.point(p),roadSource,k);
+    if(landforms){this.ctx.save();this.ctx.beginPath();this.ctx.rect(0,0,w,h-bottom-footer);this.ctx.clip();drawBattlefieldBridges(this.ctx,landforms,MAPS[b.mapId].roads.flatMap(([a,z],i)=>a===roadSource||z===roadSource?[i]:[]));this.ctx.restore();}
     if(selected?.type==='fort'){const p=this.point(selected);this.ctx.strokeStyle=factionColor(selected.owner);this.ctx.fillStyle='#176D7010';this.ctx.beginPath();this.ctx.arc(p.x,p.y,120*k,0,Math.PI*2);this.ctx.fill();this.ctx.setLineDash([5,5]);this.ctx.stroke();this.ctx.setLineDash([]);}
     const crowded=b.armies.length>40,animateMarch=!crowded&&!s.profile?.settings.reducedMotion;
     if(crowded||s.profile?.settings.reducedMotion)this.retreats.reset();
@@ -469,7 +477,7 @@ export class GameView {
     const showUpgrade=interactive&&!this.card&&(!g||g.region?.id.startsWith('upgrade-camp-'))&&!this.upgradePending&&!s.busy&&b.status==='running'&&!b.awaitingFirstDispatch;
     for(const camp of b.camps){
       const p=this.point(camp);obstacles.push({x:p.x-32,y:p.y-34,w:66,h:70});
-      this.ctx.font='600 16px sans-serif';
+      this.ctx.font=CAMP_COUNT_FONT;
       const countWidth=Math.max(34,Math.ceil(this.ctx.measureText(String(camp.garrison)).width)+14);
       obstacles.push({x:p.x-countWidth/2-26,y:p.y+13,w:countWidth+26,h:22});
       const status=(value:string,y:number,size:number,symbol=false)=>{this.ctx.font=`600 ${size}px sans-serif`;const width=this.ctx.measureText(value).width+(symbol?14:6);obstacles.push({x:p.x-width/2,y:y-size/2-2,w:width,h:size+4});};

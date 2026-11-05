@@ -184,21 +184,24 @@ export function cardAccent(ctx:CanvasRenderingContext2D,x:number,y:number,id:Act
   ctx.restore();
 }
 
-/** Compact plaque beneath the gate; the building and plaque share their faction colour. */
+/** Warm silk troop tally and a small bronze level tag, with quiet ownership pigments. */
+export const CAMP_COUNT_FONT='600 16px Georgia, "Songti SC", serif';
 export function campPennant(ctx:CanvasRenderingContext2D,x:number,y:number,value:number,id:FactionId|null,selected=false,tier?:number):void{
   if(![x,y,value].every(Number.isFinite)||!Number.isSafeInteger(value)||value<0)return;
-  ctx.save();ctx.font='600 16px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.save();ctx.font=CAMP_COUNT_FONT;ctx.textAlign='center';ctx.textBaseline='middle';
   const text=String(value),width=Math.max(34,Math.ceil(ctx.measureText(text).width)+14),left=x-width/2;
-  ctx.lineJoin='round';ctx.lineWidth=selected?1.8:1;ctx.fillStyle=id===null?'#74797D':id==='P'?'#286451':id==='E2'?'#947324':id==='E3'?'#675682':'#9A4439';ctx.strokeStyle=selected?'#F1D493':'#DED1AE';
+  ctx.lineJoin='round';ctx.lineWidth=selected?1.6:.8;ctx.fillStyle=id===null?'#D6D0BF':id==='P'?'#D3D9BE':id==='E2'?'#E2D4AD':id==='E3'?'#D5D0D1':'#DFCBB9';ctx.strokeStyle=selected?'#795333':'#96805A';
   rounded(ctx,left,y-11,width,22,2);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#FFF7E1';ctx.fillText(text,x,y+.5);
+  // Thin stained-wood rails and a cloth edge carry faction identity without a saturated block.
+  ctx.fillStyle='#856B46';ctx.fillRect(left+2,y-10,width-4,1);ctx.fillRect(left+2,y+9,width-4,1);
+  ctx.fillStyle=id===null?'#77776B':id==='P'?'#547466':id==='E2'?'#A28745':id==='E3'?'#7D7187':'#A06C54';ctx.fillRect(left+1,y-7,2,14);
+  ctx.fillStyle='#3E382B';ctx.fillText(text,x,y+.5);
   if(tier===1||tier===2||tier===3){
     // Fixed companion plate: the authoritative troop count never moves or shrinks.
-    ctx.fillStyle=['#494238','#53412A','#624418'][tier-1]!;
-    ctx.strokeStyle=['#A89A7A','#C7AB75','#F0D28C'][tier-1]!;
-    ctx.lineWidth=tier===3?1.5:1;
+    ctx.fillStyle=['#D3C29F','#D2BE92','#CFB785'][tier-1]!;
+    ctx.strokeStyle='#947C53';ctx.lineWidth=.8;
     rounded(ctx,left-26,y-10,25,20,2);ctx.fill();ctx.stroke();
-    ctx.font='600 11px sans-serif';ctx.fillStyle='#FFF0CA';
+    ctx.font='600 11px "Songti SC", "SimSun", serif';ctx.fillStyle='#54432B';
     ctx.fillText(['一级','二级','三级'][tier-1]!,left-13.5,y+.5);
   }
   ctx.restore();

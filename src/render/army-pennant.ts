@@ -19,9 +19,9 @@ export function drawArmyPennant(ctx:CanvasRenderingContext2D,rect:{x:number;y:nu
   }
   const top=y+3,bottom=y+h-3,mid=y+h/2;
   const fold=Number.isFinite(wave)?Math.max(-1.5,Math.min(1.5,wave)):0;
-  ctx.fillStyle=hit>0?'#733F32':'#314D45';ctx.strokeStyle=hit>0?'#C78B62':'#A7AF95';ctx.lineWidth=.7;
+  ctx.fillStyle=hit>0?'#D8BDA1':'#E0D2AE';ctx.strokeStyle=hit>0?'#9C6245':'#9A825A';ctx.lineWidth=.7;
   ctx.beginPath();ctx.moveTo(x+2,top);ctx.lineTo(x+w*.65,top+fold*.5);ctx.lineTo(x+w-1,top+fold);ctx.lineTo(x+w-3,mid);ctx.lineTo(x+w-1,bottom+fold);ctx.lineTo(x+w*.65,bottom+fold*.5);ctx.lineTo(x+2,bottom);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.strokeStyle='#C9C3A5';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x+4,top);ctx.lineTo(x+4,bottom);ctx.stroke();
+  ctx.strokeStyle='#A18B61';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x+4,top);ctx.lineTo(x+4,bottom);ctx.stroke();
   ctx.fillStyle=factionColor(faction);ctx.beginPath();ctx.rect(x+6,top+2,10,bottom-top-4);ctx.fill();
   // The same simple stitching as the camp standard; no nested tiny flag or rank-like numeral.
   ctx.strokeStyle='#FFF0D2';ctx.lineWidth=1;ctx.beginPath();
@@ -31,7 +31,7 @@ export function drawArmyPennant(ctx:CanvasRenderingContext2D,rect:{x:number;y:nu
   else if(faction==='E2')stroke(8,0,14,0);
   else {stroke(8,-3,14,3);stroke(8,3,14,-3);}
   ctx.stroke();
-  ctx.font=`600 ${Math.min(14,h-10)}px monospace`;ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#FFF3D5';
+  ctx.font=`600 ${Math.min(14,h-10)}px monospace`;ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#3E382B';
   ctx.fillText(String(count),x+w-4,mid+.5,w-21);
   ctx.restore();
 }
