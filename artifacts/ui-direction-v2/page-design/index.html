@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>谋定山河 · 逐页场景设计</title>
+  <base href="/">
+  <link rel="stylesheet" href="fonts/font-faces.css">
+  <link rel="stylesheet" href="design.css">
+</head>
+<body>
+  <header class="workbench-header"><div><span class="eyebrow">谋定山河 · 场景与交互设计</span><h1>从城门出征，走进每一页</h1></div><p>独立设计稿 · 样例数据<br>不写存档，不计奖励，未接入正式游戏</p></header>
+  <main class="workbench">
+    <nav id="pages" aria-label="选择设计页面"></nav>
+    <section class="preview-column" aria-label="页面效果">
+      <div class="preview-controls">
+        <label>尺寸 <select id="size"><option value="375,812">375 × 812</option><option value="320,568">320 × 568</option><option value="430,932">430 × 932</option></select></label>
+        <label><input type="checkbox" id="reduced">减少动态</label>
+        <label><input type="checkbox" id="gray">灰度</label>
+      </div>
+      <div id="phone" class="phone" aria-label="手机页面设计预览"><div id="screen"></div><div id="overlay"></div></div>
+      <p class="caption" id="caption"></p>
+    </section>
+    <aside id="notes" aria-label="本页设计规格"></aside>
+  </main>
+  <script type="module" src="design.js"></script>
+</body>
+</html>
