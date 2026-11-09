@@ -84,7 +84,7 @@ for(const [width,height]of [[320,568],[375,812],[430,932]] as const){
       h.tap(`about-section-${i}`);h.draw();
       assert.ok(state.scroll>=0&&state.scroll<=state.maxScroll);
       const open=h.find(`about-section-${i}`);assert.ok(open.y>=16+72-8&&open.y+open.h<=height-12);
-      if(state.maxScroll>=i*60)assert.equal(open.y,16+72+60,'a section aligns to the reading top when content height permits');
+      if(state.maxScroll>=i*60)assert.equal(open.y,h.find('about-rules').y+h.find('about-rules').h+14,'a section aligns to the reading top when content height permits');
       h.view.wheel(10000);h.draw();assert.equal(state.scroll,state.maxScroll);
       h.view.wheel(-10000);h.draw();
       for(let step=0;step<100&&!h.view.regions.some(r=>r.id===`about-section-${i}`);step++){h.view.wheel(12);h.draw();}

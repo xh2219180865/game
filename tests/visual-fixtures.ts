@@ -15,7 +15,13 @@ await loadArt(()=>new Image());
 
 const canvas=document.querySelector<HTMLCanvasElement>('canvas')!,ctx=canvas.getContext('2d')!,now=Date.now(),params=new URLSearchParams(location.search),scene=params.get('scene');
 if(params.get('grayscale')==='true')canvas.style.filter='grayscale(1)';
-const session=new GameSession({storage:{async read(){return null;},async write(){},async remove(){}},now:()=>now,random:()=>.2,notify:()=>{},events:()=>{}});
+// Only the settings preview accepts writes. They live for this tab's current load.
+const settingsPreview=params.get('screen')==='settings'?new Map<string,string>():null;
+const session=new GameSession({storage:{
+  async read(key){return settingsPreview?.get(key)??null;},
+  async write(key,value){settingsPreview?.set(key,value);},
+  async remove(key){settingsPreview?.delete(key);},
+},now:()=>now,random:()=>.2,notify:()=>{},events:()=>{}});
 const p=freshProfile(now,'visual-only');p.firstDragCompleted=true;p.tutorialFirstWins=['L01','L02','L03'];p.unlockedCardIds=[...CARD_IDS];p.rankPoints=480;p.highestRankPoints=480;
 p.activeInventory={mobilize:3,march:2,supply:1,feint:4};p.passiveLevels={farming:3,logistics:1,fortification:10};p.qualifiedArenaWins=8;
 p.settings.reducedMotion=params.get('motion')==='reduced';
@@ -90,6 +96,11 @@ if(scene==='lesson-upgrade')session.temporary=p.activeMatch;
 const allowed:Page[]=['home','battle','pause','result','lessons','prepare','choice','library','ranks','settings','about','leaderboard','recovery'];
 const requested=new URLSearchParams(location.search).get('screen') as Page;session.page=allowed.includes(requested)?requested:'choice';session.returnPage='home';
 if(session.page==='prepare')p.activeMatch=null;
+if(settingsPreview){
+  const profile=freshProfile(now,'visual-settings');
+  profile.settings.reducedMotion=params.get('motion')==='reduced';
+  session.profile=profile;
+}
 if(session.page==='recovery')session.error='存档校验失败。原记录已保留，可以重新读取、恢复完整副本或进入临时无奖励练兵。';
 if(session.page==='pause'){b.status='paused';p.activeMatch!.realStartedAt=now-86400001;}
 const view=new GameView(ctx,session);

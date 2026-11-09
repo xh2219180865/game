@@ -4,7 +4,8 @@ import { TROOP_MOTION_CROPS, type MotionSpriteId } from './troop-motion-regions.
 
 /** Local, shared artwork. Platform entries supply images; rules never wait for art. */
 export const ART_SOURCES = {
-  home:'assets/art/home-courtyard.jpg',
+  home:'assets/art/warfront-home.jpg',
+  'field-tent':'assets/art/field-tent.jpg',
   'terrain-plains':'assets/art/warfront-ground.jpg',
   'terrain-snow':'assets/art/a-terrain-snow.jpg',
   'terrain-desert':'assets/art/a-terrain-desert.jpg',
@@ -112,7 +113,7 @@ function region(id:ArtId):{source:SourceId;column:number;row:number;columns:numb
   return null;
 }
 
-export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,width:number,height:number,fit:'cover'|'contain'|'bottom'='contain'):boolean{
+export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,width:number,height:number,fit:'cover'|'contain'|'bottom'|'stretch'='contain'):boolean{
   if(![x,y,width,height].every(Number.isFinite)||width<=0||height<=0)return false;
   const sample=Object.prototype.hasOwnProperty.call(SAMPLE_SPRITE_CROPS,id)?SAMPLE_SPRITE_CROPS[id as SampleSpriteId]:undefined;
   const motion=Object.prototype.hasOwnProperty.call(TROOP_MOTION_CROPS,id)?TROOP_MOTION_CROPS[id as MotionSpriteId]:undefined;
@@ -126,7 +127,7 @@ export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,
     const ratio=width/height;
     if(sw/sh>ratio){const next=sh*ratio;sx+=(sw-next)/2;sw=next;}
     else {const next=sw/ratio;sy+=(sh-next)/2;sh=next;}
-  }else{
+  }else if(fit!=='stretch'){
     const scale=Math.min(width/sw,height/sh),w=sw*scale,h=sh*scale;
     x+=(width-w)/2;y+=fit==='bottom'?height-h:(height-h)/2;width=w;height=h;
   }

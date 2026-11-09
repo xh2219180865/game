@@ -1,5 +1,11 @@
 # 原创美术资源
 
+军帐设置使用 field-tent.jpg（550×1100，109,885 字节）。用 imagegen 生成帐篷、灯盏、木案和空白绢布。母版 exec-b976940d-3164-4cc1-a6e6-7ddf6e87b746.png。JPEG 66。文字和可交互控件由 Canvas 绘制。
+
+
+2026-11-08 首页运行图改用 warfront-home.jpg（700×1400）。根据用户双屏参考图的左侧，通过 imagegen 生成无字的汉末城关、火盆、旗帜与行军背景，留出顶部标题与底部控件空间；母版 exec-42df7c0d-50ab-4c7c-adc9-dc76762c3a31.png，JPEG 73。标题、军衔和导航由 Canvas 绘制。
+
+
 ## 2026-11-04 山川地貌图集（正式运行新增一张）
 
 内置 imagegen 以现有 `warfront-camps.png` 为画风参考制作6组低矮山脊／山石：3列为平原、雪地、砂地，2行为变化。母版 `warfront-landforms-master.png`（1536×1024）保留，运行版 `warfront-landforms.png`（384×256，95,420字节）经sips等比编码；该次只调整新素材发布尺寸，未降低旧营地／军士图集质量。内置原文件 `exec-298f6ac5-62df-44e3-b305-6f38c98ecc02.png`。母版及运行版均是真RGBA透明区，实际alpha与裁切窗由测试解码，不把预览底色当透明证明。

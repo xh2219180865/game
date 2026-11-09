@@ -34,9 +34,9 @@ test('field cards use battlefield sprites without painting inventory or names',a
     const d=canvas();drawOrderCard(d.ctx,10,20,w,54,id,false,false,true);d.balanced();
     const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,id==='supply'?3:1);
     assert.ok(images.every(c=>(c.args[0] as ArtImage).src===(id==='feint'?'assets/art/warfront-camps.png':'assets/art/warfront-infantry.png')));
-    assert.ok(d.calls.some(c=>c.op==='rect'&&JSON.stringify(c.args)===JSON.stringify([12,22,w-4,34])),'illustration is clipped above the name slip');
+    assert.ok(d.calls.some(c=>c.op==='rect'&&JSON.stringify(c.args)===JSON.stringify([14,38,w-8,32])),'illustration is clipped below the name slip');
     assert.ok(d.calls.some(c=>c.op==='clip'));
-    assert.ok(d.calls.some(c=>c.op==='fillRect'&&c.args[1]===54&&c.args[3]===20),'reserves the lower name slip');
+    assert.ok(d.calls.some(c=>c.op==='fillRect'&&c.args[1]===24&&c.args[3]===14),'reserves the upper name slip');
     assert.ok(!d.calls.some(c=>c.op==='fillText'||c.op==='strokeText'));
   }
 });

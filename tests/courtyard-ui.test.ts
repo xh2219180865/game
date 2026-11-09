@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { drawCourtyardPanel, drawCourtyardHeading, drawCourtyardSwitch } from '../src/render/courtyard-ui.ts';
+import { drawCourtyardPanel, drawCourtyardHeading, drawSettingSeal } from '../src/render/courtyard-ui.ts';
 
 type Draw=(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number)=>void;
 const drawings:Draw[]=[
@@ -9,8 +9,8 @@ const drawings:Draw[]=[
   (c,x,y,w,h)=>drawCourtyardPanel(c,x,y,w,h,'tile'),
   (c,x,y,w,h)=>drawCourtyardPanel(c,x,y,w,h,'tile',true),
   drawCourtyardHeading,
-  (c,x,y,w,h)=>drawCourtyardSwitch(c,x,y,w,h,false),
-  (c,x,y,w,h)=>drawCourtyardSwitch(c,x,y,w,h,true),
+  (c,x,y,w,h)=>drawSettingSeal(c,x,y,w,h,false),
+  (c,x,y,w,h)=>drawSettingSeal(c,x,y,w,h,true),
 ];
 function capture(draw:Draw,x=12,y=20,w=300,h=200){
   const initial={fillStyle:'#123456',strokeStyle:'#234567',lineWidth:3,lineCap:'round',lineJoin:'round',shadowBlur:4,shadowOffsetX:2,shadowOffsetY:-2,globalAlpha:.6};
@@ -78,11 +78,9 @@ test('panel, tile and muted states have distinct material treatments',()=>{
   assert.ok(capture(drawings[0]!).paints.length>capture(drawings[2]!).paints.length);
 });
 
-test('switch visibly moves its copper slider from left to right without changing track bounds',()=>{
-  const off=capture(drawings[5]!,0,0,52,24).paints as {rect?:number[];style?:unknown}[];
-  const on=capture(drawings[6]!,0,0,52,24).paints as typeof off;
-  assert.deepEqual(off[0],on[0]);
-  const left=off.find(p=>p.style==='#4D4A3C')!.rect!,right=on.find(p=>p.style==='#4D4A3C')!.rect!;
-  assert.ok(left[0]!+left[2]!<=26);assert.ok(right[0]!>=26);
-  assert.deepEqual(left.slice(1),right.slice(1));
+test('the setting seal keeps its bounds and changes its ink treatment',()=>{
+  const off=capture(drawings[5]!,0,0,50,30).paints;
+  const on=capture(drawings[6]!,0,0,50,30).paints;
+  assert.deepEqual(off[0]!.rect,on[0]!.rect);
+  assert.notEqual(off[0]!.style,on[0]!.style);
 });

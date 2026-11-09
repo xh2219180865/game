@@ -90,8 +90,7 @@ for(const [width,height]of SIZES)for(const maximum of [false,true])test(`painted
   for(const id of CARD_IDS)assert.ok(seen.ids.has(`library-${id}`),`unreachable card ${id}`);
   assert.ok(!/持有|累计|已解锁 \d/.test(seen.text),'the catalogue does not expose personal holdings');
   if(maximum){assert.ok(!seen.text.includes('999+'));assert.ok(!seen.text.includes(String(Number.MAX_SAFE_INTEGER)),'personal counts belong to preparation, not the catalogue');}
-  assert.ok(h.d.images.includes(ART_SOURCES.sample),'the library uses actual battlefield camp and troop art');
-  assert.ok(!h.d.images.includes(ART_SOURCES.cards),'the old card-character sheet is no longer painted');
+  assert.ok(!h.d.images.includes(ART_SOURCES.cards),'the catalogue uses compact ink seals');
   for(const id of CARD_IDS){
     const r=find(h,`library-${id}`),staleOther=h.v.regions.find(r=>r.id.startsWith('library-')&&r.id!==`library-${id}`);
     assert.equal(r.label,`查看${CARDS[id].name}，已解锁`);

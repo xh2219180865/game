@@ -15,14 +15,20 @@ function line(ctx:CanvasRenderingContext2D,x1:number,y1:number,x2:number,y2:numb
 }
 
 /** Quiet timber framing and woven silk; the caller owns content and hit regions. */
-export function drawCourtyardPanel(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,kind:PanelKind='panel',muted=false):void{
+export function drawCourtyardPanel(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,kind:PanelKind='panel',muted=false,dark=false):void{
   if(!validRect(x,y,w,h)||!['panel','tile'].includes(kind))return;
   begin(ctx,x,y);
   const unit=Math.min(1,w/40,h/40),frame=(kind==='panel'?5:2)*unit;
-  const wood=muted?'#696B65':'#514B3E',edge=muted?'#92928A':'#9E8762',bronze=muted?'#A7A79C':'#B6A079';
+  const wood=muted?'#696B65':'#3C2B22',edge=muted?'#92928A':'#A58358',bronze=muted?'#A7A79C':'#BA9562';
   ctx.fillStyle=wood;ctx.fillRect(0,0,w,h);
   const silk=ctx.createLinearGradient(0,frame,0,h-frame);
-  silk.addColorStop(0,muted?'#DADAD1':'#E8E0CB');silk.addColorStop(.3,muted?'#E5E5DC':'#F0EAD9');silk.addColorStop(1,muted?'#D6D6CD':'#DED3BA');
+  if(dark){
+    silk.addColorStop(0,muted?'#3A3530':'#4B382A');
+    silk.addColorStop(.35,muted?'#2E2B27':'#382A22');
+    silk.addColorStop(1,'#261F1A');
+  }else{
+    silk.addColorStop(0,muted?'#DADAD1':'#D9C4A0');silk.addColorStop(.3,muted?'#E5E5DC':'#E9D8B9');silk.addColorStop(1,muted?'#D6D6CD':'#D1B890');
+  }
   ctx.fillStyle=silk;ctx.fillRect(frame,frame,w-frame*2,h-frame*2);
   // Sparse fixed threads remain subtle and never scale drawing work with area.
   for(let i=1;i<=9;i++){
@@ -58,13 +64,13 @@ export function drawCourtyardPanel(ctx:CanvasRenderingContext2D,x:number,y:numbe
 }
 
 /** Small dark wooden plaque intended for caller-drawn ivory headings. */
-export function drawCourtyardHeading(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number):void{
+export function drawCourtyardHeading(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,lacquer=false):void{
   if(!validRect(x,y,w,h))return;
   begin(ctx,x,y);
   const unit=Math.min(1,w/40,h/20);
-  ctx.fillStyle='#393C33';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#281E19';ctx.fillRect(0,0,w,h);
   const wood=ctx.createLinearGradient(0,0,0,h);
-  wood.addColorStop(0,'#655C48');wood.addColorStop(.4,'#514B3D');wood.addColorStop(1,'#45473A');
+  wood.addColorStop(0,lacquer?'#953C2C':'#604330');wood.addColorStop(.4,lacquer?'#743024':'#423026');wood.addColorStop(1,lacquer?'#51221C':'#2F221B');
   ctx.fillStyle=wood;ctx.fillRect(unit,unit,w-2*unit,h-2*unit);
   line(ctx,4*unit,2*unit,w-4*unit,2*unit,'#B59C70',unit);
   line(ctx,4*unit,h-2*unit,w-4*unit,h-2*unit,'#837454',unit);
@@ -74,20 +80,17 @@ export function drawCourtyardHeading(ctx:CanvasRenderingContext2D,x:number,y:num
   ctx.restore();
 }
 
-/** A copper slider on a wooden rail; labels and the 44 px touch area are external. */
-export function drawCourtyardSwitch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,enabled:boolean):void{
+/** Ink seal printed directly onto the desk cloth. */
+export function drawSettingSeal(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,enabled:boolean):void{
   if(!validRect(x,y,w,h))return;
   begin(ctx,x,y);
-  const unit=Math.min(1,w/36,h/20),inset=2*unit,knob=Math.min(h-4*unit,w*.45),kx=enabled?w-inset-knob:inset,ky=(h-knob)/2;
-  ctx.fillStyle='#504B3D';ctx.fillRect(0,h*.22,w,h*.56);
-  ctx.fillStyle=enabled?'#60755D':'#787769';ctx.fillRect(unit,h*.22+unit,w-2*unit,h*.56-2*unit);
-  line(ctx,3*unit,h*.24,w-3*unit,h*.24,'#A18B63',.8*unit);
-  line(ctx,3*unit,h*.74,w-3*unit,h*.74,'#353C33',unit);
-  ctx.fillStyle='#4D4A3C';ctx.fillRect(kx,ky,knob,knob);
-  const bronze=ctx.createLinearGradient(kx,ky,kx,ky+knob);
-  bronze.addColorStop(0,enabled?'#D7BE8C':'#B9AE92');bronze.addColorStop(1,enabled?'#9E8054':'#8E826A');
-  ctx.fillStyle=bronze;ctx.fillRect(kx+unit,ky+unit,knob-2*unit,knob-2*unit);
-  ctx.fillStyle=enabled?'#425E48':'#5E6056';
-  ctx.fillRect(kx+knob*.35,ky+knob*.35,knob*.3,knob*.3);
+  const inset=Math.min(2,w*.1,h*.1),ink=enabled?'#8C3426':'#5B4937';
+  ctx.fillStyle=enabled?ink:'#E6C89277';
+  ctx.fillRect(0,0,w,h);
+  const border=enabled?'#E5B68A':ink;
+  line(ctx,inset,inset,w-inset,inset,border,Math.min(1,inset*2));
+  line(ctx,inset,h-inset,w-inset,h-inset,border,Math.min(1,inset*2));
+  line(ctx,inset,inset,inset,h-inset,border,Math.min(1,inset*2));
+  line(ctx,w-inset,inset,w-inset,h-inset,border,Math.min(1,inset*2));
   ctx.restore();
 }

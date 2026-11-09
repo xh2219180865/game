@@ -27,7 +27,7 @@ import { drawSampleGround } from './sample-ground.ts';
 import type { MobileIcon } from './mobile-icons.ts';
 import { placeCampPopover } from './mobile-layout.ts';
 import { drawRankStandard, drawRewardFan, drawGateSeal } from './scheme-a.ts';
-import { drawCourtyardPanel, drawCourtyardHeading, drawCourtyardSwitch } from './courtyard-ui.ts';
+import { drawCourtyardPanel, drawCourtyardHeading, drawSettingSeal } from './courtyard-ui.ts';
 
 export interface Region {id:string;label:string;x:number;y:number;w:number;h:number;run:()=>void}
 export interface Viewport {width:number;height:number;top:number;bottom:number}
@@ -141,11 +141,23 @@ export class GameView {
     if(this.session.page==='battle'){void this.session.pause();return;}
     this.regions.find(r=>r.id==='back')?.run();
   }
-  private text(value:string,x:number,y:number,size=16,color=COLORS.ink,weight=400,align:CanvasTextAlign='left',serif=false):void{
-    const c=this.ctx;c.font=`${weight} ${size}px ${serif?'"Songti SC", "STSong", "SimSun", serif':'-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'}`;c.fillStyle=color;c.textAlign=align;c.textBaseline='middle';c.fillText(value,x,y);
+  private nightPanel=false;
+  private panelText(color:string):string{
+    if(!this.nightPanel)return color;
+    if(color===COLORS.ink)return '#F3DFC0';
+    if(color===COLORS.muted)return '#D6BFA0';
+    if(color===COLORS.player)return '#EAC27D';
+    if(color===COLORS.enemy1)return '#FFAC95';
+    return color;
+  }
+  private text(value:string,x:number,y:number,size=16,color=COLORS.ink,weight=400,align:CanvasTextAlign='left',display=false):void{
+    const c=this.ctx;c.font=`${weight} ${size}px ${display?'"Kaiti SC", "STKaiti", "KaiTi", "Songti SC", "STSong", "SimSun", serif':'-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'}`;c.fillStyle=this.panelText(color);c.textAlign=align;c.textBaseline='middle';c.fillText(value,x,y);
   }
   private box(x:number,y:number,w:number,h:number,fill=COLORS.surface,r=16,stroke?:string):void{
-    if(this.session.page!=='battle'&&fill===COLORS.surface&&w>=100&&h>=60){drawCourtyardPanel(this.ctx,x,y,w,h);return;}
+    if(this.nightPanel&&fill===COLORS.surface){
+      drawCourtyardPanel(this.ctx,x,y,w,h,h>=60&&w>=100?'panel':'tile',false,true);
+      return;
+    }
     rounded(this.ctx,x,y,w,h,Math.min(r,4));this.ctx.fillStyle=fill;this.ctx.fill();
     if(stroke){this.ctx.strokeStyle=stroke;this.ctx.lineWidth=1;this.ctx.stroke();}
   }
@@ -164,41 +176,41 @@ export class GameView {
   }
   private button(id:string,label:string,x:number,y:number,w:number,h:number,run:()=>void,style:'primary'|'secondary'|'quiet'|'danger'='secondary'):void{
     const primary=style==='primary'||style==='danger',pressed=this.gesture?.region?.id===id&&!this.gesture.drag;
-    const fill=primary?(pressed?'#773E2D':'#A04B35'):style==='quiet'?'#DED8CA':'#EEE9DD';
+    const fill=primary?(pressed?'#773E2D':'#8F3526'):style==='quiet'?'#DED8CA':'#EEE9DD';
     const yy=y+(pressed?2:0);
     if(primary){
       const c=this.ctx,cut=Math.min(7,h*.14);
       const edge=(inset:number,offset:number)=>{c.beginPath();c.moveTo(x+inset+cut,yy+inset+offset);c.lineTo(x+w-inset-cut,yy+inset+offset);c.lineTo(x+w-inset,yy+inset+cut+offset);c.lineTo(x+w-inset,yy+h-inset-cut+offset);c.lineTo(x+w-inset-cut,yy+h-inset+offset);c.lineTo(x+inset+cut,yy+h-inset+offset);c.lineTo(x+inset,yy+h-inset-cut+offset);c.lineTo(x+inset,yy+inset+cut+offset);c.closePath();};
       edge(0,2);c.fillStyle='#625344';c.fill();edge(0,0);
-      const lacquer=c.createLinearGradient(0,yy,0,yy+h);lacquer.addColorStop(0,pressed?'#773E2D':'#B05A40');lacquer.addColorStop(.45,fill);lacquer.addColorStop(1,pressed?'#66372A':'#8C3E2D');c.fillStyle=lacquer;c.fill();c.strokeStyle='#A68B61';c.lineWidth=1;c.stroke();
+      const lacquer=c.createLinearGradient(0,yy,0,yy+h);lacquer.addColorStop(0,pressed?'#773E2D':'#A5442D');lacquer.addColorStop(.45,fill);lacquer.addColorStop(1,pressed?'#66372A':'#692A20');c.fillStyle=lacquer;c.fill();c.strokeStyle='#A68B61';c.lineWidth=1;c.stroke();
       edge(3,0);c.strokeStyle='#D6B68A';c.lineWidth=.6;c.stroke();
-    }else if(this.session.page!=='battle')drawCourtyardPanel(this.ctx,x,yy,w,h,'tile',style==='quiet');
+    }else if(this.nightPanel)drawCourtyardPanel(this.ctx,x,yy,w,h,'tile',style==='quiet',true);
     else this.box(x,yy,w,h,fill,4,style==='quiet'?undefined:'#B7AD96');
     const symbol=id==='pause'?'Ⅱ':id==='back'?'‹':id==='close-camp'?'×':null;
     const homePrimary=this.session.page==='home'&&id==='primary';
-    this.text(symbol??label,x+w/2,yy+h/2,homePrimary?23:symbol?25:w<90?14:16,primary?'#FFF9EB':COLORS.ink,650,'center',primary);
+    this.text(symbol??label,x+w/2,yy+h/2,homePrimary?30:symbol?25:w<90?14:16,primary?'#FFF9EB':COLORS.ink,650,'center',!symbol);
 
     if(y+h>this.viewport.top&&y<this.viewport.height-this.viewport.bottom)this.regions.push({id,label,x,y,w,h,run});
   }
   private iconButton(id:string,label:string,x:number,y:number,size:number,icon:MobileIcon,run:()=>void,caption=false):void{
     const pressed=this.gesture?.region?.id===id&&!this.gesture.drag,yy=y+(pressed?2:0);
     drawGameControl(this.ctx,x,y,size,icon,pressed);
-    if(caption)this.text(label,x+size/2,yy+size+13,12,COLORS.ink,650,'center');
+    if(caption)this.text(label,x+size/2,yy+size+13,12,COLORS.ink,650,'center',true);
     this.regions.push({id,label,x,y,w:size,h:size+(caption?24:0),run});
   }
   private textButton(id:string,label:string,x:number,y:number,w:number,h:number,run:()=>void):void{
     const pressed=this.gesture?.region?.id===id&&!this.gesture.drag;
-    this.text(label,x+w/2,y+h/2+(pressed?2:0),14,pressed?COLORS.ink:COLORS.player,550,'center');
+    this.text(label,x+w/2,y+h/2+(pressed?2:0),14,pressed?COLORS.ink:COLORS.player,550,'center',true);
     this.regions.push({id,label,x,y,w,h,run});
   }
   private orderButton(id:ActiveCardId,label:string,x:number,y:number,w:number,run:()=>void):void{
     const c=this.ctx,selected=this.card===id,split=label.lastIndexOf(' '),inventory=label.slice(split+1);
     const pressed=this.gesture?.region?.id===`card-${id}`&&!this.gesture.drag,yy=y+(pressed?2:0);
     drawOrderCard(c,x,y,w,54,id,selected,pressed,inventory!=='锁'&&inventory!=='0');
-    this.text(label.slice(0,split),x+w/2,yy+43,13,COLORS.ink,650,'center',true);
+    this.text(label.slice(0,split),x+w/2,yy+11,14,COLORS.ink,650,'center',true);
     const badge=inventory==='锁'?'锁':`×${inventory}`;
-    this.box(x+w-34,yy+3,31,19,inventory==='锁'?'#5D6558':'#F5EDD7',6);
-    this.text(badge,x+w-18,yy+13,11,inventory==='锁'?'#FFFFFF':COLORS.ink,650,'center');
+    this.box(x+w-33,yy+35,29,16,'#39291FEF',2,'#A58155');
+    this.text(badge,x+w-18,yy+43,11,'#FFF1D4',650,'center');
     this.regions.push({id:`card-${id}`,label,x,y,w,h:56,run});
   }
 
@@ -208,15 +220,33 @@ export class GameView {
     this.ctx.restore();this.maxScroll=Math.max(0,end+this.scroll-bottom);
     this.regions=this.regions.flatMap((r,i)=>{if(i<first)return [r];const y=Math.max(top,r.y),edge=Math.min(bottom,r.y+r.h);return edge-y>=44?[{...r,y,h:edge-y}]:[];});
   }
+  private returnPlaque(right:number,y:number,run:()=>void,label='返回'):void{
+    const width=68,x=right-width;
+    const pressed=this.gesture?.region?.id==='back'&&!this.gesture.drag;
+    const tagY=y+7+(pressed?2:0);
+    drawCourtyardHeading(this.ctx,x,tagY,width,30);
+    drawMobileIcon(this.ctx,x+15,tagY+15,13,'back','#E2C395');
+    this.text('返回',x+43,tagY+15,15,'#F5E9D0',650,'center',true);
+    this.regions.push({id:'back',label,x,y,w:width,h:44,run});
+  }
   private header(title:string,back:(()=>void)|null=()=>{this.session.page='home';}):number{
-    const t=this.viewport.top,w=this.viewport.width,pw=Math.min(w-140,Math.max(112,title.length*21+32));
-    drawCourtyardHeading(this.ctx,(w-pw)/2,t+8,pw,38);
-    if(back)this.iconButton('back','返回',16,t+4,44,'back',back);this.text(title,w/2,t+27,title.length>5?17:20,'#F5E9D0',650,'center',true);return t+72;
+    const {top,width:w}=this.viewport;
+    const titleWidth=Math.min(w-(back?112:32),Math.max(112,title.length*21+32));
+    const titleX=back?16:(w-titleWidth)/2;
+    drawCourtyardHeading(this.ctx,titleX,top+8,titleWidth,38);
+    this.text(title,titleX+titleWidth/2,top+27,title.length>5?17:20,'#F5E9D0',650,'center',true);
+    if(back)this.returnPlaque(w-16,top+5,back);
+    return top+72;
   }
   private courtyardBackdrop():void{
     const c=this.ctx,{width:w,height:h}=this.viewport;
     if(!drawArt(c,'home',0,0,w,h,'cover'))drawHomeScene(c,0,0,w,h);
-    c.fillStyle='#E9E3D5C9';c.fillRect(0,0,w,h);
+    const veil=c.createLinearGradient(0,0,0,h);
+    veil.addColorStop(0,'#16131088');
+    veil.addColorStop(.25,'#1A1410C9');
+    veil.addColorStop(.68,'#1A1410DB');
+    veil.addColorStop(1,'#14110FEF');
+    c.fillStyle=veil;c.fillRect(0,0,w,h);
   }
   private open(page:Page):void{this.session.returnPage=this.session.page==='battle'?'pause':this.session.page;if(this.session.page==='battle')void this.session.pause(page);else this.session.page=page;this.cancel();}
   private point(c:Point):Point{return {x:this.board.x+c.x*this.board.k,y:this.board.y+c.y*this.board.k};}
@@ -248,6 +278,7 @@ export class GameView {
   }
   draw(now:number):void{
     this.now=now;const s=this.session,c=this.ctx,{width:w,height:h}=this.viewport;
+    this.nightPanel=s.page!=='home'&&s.page!=='battle';
     const artRevision=getArtRevision();
     if(this.renderedArtRevision!==artRevision){this.inputVersion++;this.gesture=null;this.renderedArtRevision=artRevision;}
     if(s.page!==this.previousPage){this.prepareRulesOpen=false;this.scroll=0;this.librarySelection=null;this.maxScroll=0;this.gesture=null;this.selected=null;this.card=null;this.modal=null;this.previousPage=s.page;this.pageStarted=now;this.pauseDetailsOpen=false;this.rankRulesOpen=false;this.resultDetailsOpen=false;this.cardRulesOpen=false;this.campDetailsOpen=false;this.aboutSection=null;this.aboutRulesOpen=false;}
@@ -259,12 +290,18 @@ export class GameView {
     if(this.gesture?.source&&s.match?.battle.camps.find(c=>c.id===this.gesture!.source)?.owner!=='P')this.cancel();
     if(this.preparedWeek!==s.profile?.weekId){if(this.preparedWeek!==null)this.cancel();this.preparedWeek=s.profile?.weekId??null;}
     this.regions=[];c.clearRect(0,0,w,h);c.fillStyle=COLORS.paper;c.fillRect(0,0,w,h);
-    if(s.page!=='battle'&&s.page!=='pause'&&s.page!=='home'&&s.page!=='settings')this.courtyardBackdrop();
+    if(s.page!=='battle'&&s.page!=='home'&&s.page!=='settings'&&s.page!=='about'&&s.page!=='library'&&(s.page!=='pause'||!s.match))this.courtyardBackdrop();
     if(!this.viewportUsable){
+      if(s.page==='settings'||s.page==='about'||s.page==='library')this.courtyardBackdrop();
       this.clearInput();if(s.page==='battle')void s.suspend();
       this.text('请竖屏使用',w/2,h/2-16,16,COLORS.ink,500,'center');this.text('或调大窗口后继续',w/2,h/2+16,14,COLORS.ink,400,'center');return;
     }
-    if(s.page==='loading'){this.text('谋定山河',w/2,h*.38,34,COLORS.ink,700,'center');this.text('正在读取本地记录',w/2,h*.48,16,COLORS.muted,400,'center');}
+    if(s.page==='loading'){
+      const titleWidth=Math.min(w-40,240);
+      drawCourtyardHeading(c,(w-titleWidth)/2,h*.38-27,titleWidth,54);
+      this.text('谋定山河',w/2,h*.38,34,'#F4DFC0',750,'center',true);
+      this.text('正在读取本地记录',w/2,h*.48,16,COLORS.ink,400,'center');
+    }
     else if(s.page==='battle')this.battle();
     else if(s.page==='home')this.home();
     else if(s.page==='lessons')this.lessons();
@@ -288,9 +325,9 @@ export class GameView {
     }
     if(s.busy){this.box(w-100,this.viewport.top+54,84,28,COLORS.surface,8);this.text('保存中…',w-58,this.viewport.top+68,12,COLORS.muted,400,'center');}
     const pageFade=s.profile?.settings.reducedMotion?0:.18*(1-Math.min(1,Math.max(0,(now-this.pageStarted)/180)));
-    if(pageFade>0){c.save();c.globalAlpha=pageFade;c.fillStyle=COLORS.paper;c.fillRect(0,0,w,h);c.restore();}
+    if(pageFade>0){c.save();c.globalAlpha=pageFade;c.fillStyle=this.nightPanel?'#171311':COLORS.paper;c.fillRect(0,0,w,h);c.restore();}
     if(this.modal!==this.shownModal){this.shownModal=this.modal;this.modalStarted=now;}
-    if(this.modal)this.drawModal();
+    if(this.modal){this.nightPanel=true;this.drawModal();}
     const modal=this.modal,armyPage=this.armyPage,choice=this.selectedChoice,campDetails=this.campDetailsOpen,selected=this.selected,rankRules=this.rankRulesOpen,prepareRules=this.prepareRulesOpen,aboutSection=this.aboutSection,aboutRules=this.aboutRulesOpen,resultDetails=this.resultDetailsOpen,cardRules=this.cardRulesOpen,pauseDetails=this.pauseDetailsOpen;
     this.regions=this.regions.map(r=>({...r,run:()=>{if(artRevision===getArtRevision()&&context===this.inputContext()&&modal===this.modal&&armyPage===this.armyPage&&choice===this.selectedChoice&&campDetails===this.campDetailsOpen&&selected===this.selected&&rankRules===this.rankRulesOpen&&prepareRules===this.prepareRulesOpen&&aboutSection===this.aboutSection&&aboutRules===this.aboutRulesOpen&&resultDetails===this.resultDetailsOpen&&cardRules===this.cardRulesOpen&&pauseDetails===this.pauseDetailsOpen)r.run();}}));
   }
@@ -302,21 +339,28 @@ export class GameView {
     const s=this.session,p=s.profile!,{width:w,height:h,top,bottom}=this.viewport,c=this.ctx;
     if(!drawArt(c,'home',0,0,w,h,'cover'))drawHomeScene(c,0,0,w,h);
     drawHomeAtmosphere(c,w,h,this.now-this.pageStarted,p.settings.reducedMotion);
-    const shade=c.createLinearGradient(0,0,0,h);shade.addColorStop(0,'#F0EDE28A');shade.addColorStop(.23,'#F0EDE200');shade.addColorStop(.72,'#F0EDE200');shade.addColorStop(1,'#EDE5D68A');c.fillStyle=shade;c.fillRect(0,0,w,h);
-    this.text('谋定山河',24,top+27,w<340?29:34,COLORS.ink,750,'left',true);
+    const shade=c.createLinearGradient(0,0,0,h);shade.addColorStop(0,'#161310B8');shade.addColorStop(.23,'#18141012');shade.addColorStop(.69,'#18141000');shade.addColorStop(1,'#171311ED');c.fillStyle=shade;c.fillRect(0,0,w,h);
+    c.save();
+    c.shadowColor='#17120D';c.shadowBlur=5;c.shadowOffsetY=2;
+    this.text('谋定山河',w/2-12,top+28,Math.min(52,(w-100)/4),'#F2DFC0',850,'center',true);
+    c.restore();
     const settingsPressed=this.gesture?.region?.id==='settings'&&!this.gesture.drag;
-    drawGameControl(c,w-52,top+10,32,'settings',settingsPressed);
+    const settingY=top+11+(settingsPressed?2:0);
+    drawCourtyardHeading(c,w-57,settingY,42,29);
+    this.text('设置',w-36,settingY+14.5,15,'#F3E0BA',650,'center',true);
     this.regions.push({id:'settings',label:'设置',x:w-58,y:top+4,w:44,h:44,run:()=>this.open('settings')});
     const rank=rankName(p.rankPoints),rankWidth=Math.min(196,w-92);
+    drawCourtyardHeading(c,22,top+56,Math.min(rankWidth,125),34,true);
     drawHomeEntryIcon(c,39,top+73,30,'rank',this.gesture?.region?.id==='rank-card'&&!this.gesture.drag);
     const rankSize=this.lines(rank,rankWidth-42,14).length>1?11:14;
-    this.text(rank,61,top+73,rankSize,COLORS.ink,650);
+    this.text(rank,61,top+73,rankSize,'#F3E0BA',650,'left',true);
     this.regions.push({id:'rank-card',label:rank,x:22,y:top+51,w:rankWidth,h:44,run:()=>this.open('ranks')});
     const navY=h-bottom-82;
     for(const [id,label,kind,fraction,page]of [['lessons','练兵','lessons',.22,'lessons'],['library','策略','cards',.5,'library'],['leaderboard','周榜','leaderboard',.78,'leaderboard']] as const){
       const x=w*fraction,pressed=this.gesture?.region?.id===id&&!this.gesture.drag;
       drawHomeEntryIcon(c,x,navY+23,38,kind,pressed);
-      this.text(label,x,navY+55+(pressed?1:0),15,COLORS.ink,650,'center',true);
+      drawCourtyardHeading(c,x-33,navY+42,66,26);
+      this.text(label,x,navY+55+(pressed?1:0),16,'#F4DFC0',750,'center',true);
       this.regions.push({id,label,x:x-34,y:navY,w:68,h:70,run:()=>this.open(page)});
     }
     const primaryY=h-bottom-164,noticeBottom=primaryY-12,noticeTop=top+108,noticeWidth=Math.min(300,w-40),noticeX=(w-noticeWidth)/2;
@@ -368,10 +412,10 @@ export class GameView {
     const first=this.startScroll(start,edge);
     for(const [i,id]of ids.entries()){
       const row=start+i*spacing-this.scroll,open=p?lessonOpen(p,id):id==='L01',won=p?.tutorialFirstWins.includes(id),tx=122,tw=w-tx-36;
-      drawCourtyardPanel(c,20,row,w-40,124,'panel',!open);
+      drawCourtyardPanel(c,20,row,w-40,124,'panel',!open,true);
       c.fillStyle='#93836826';c.beginPath();c.ellipse(72,row+91,39,12,0,0,Math.PI*2);c.fill();
       building(c,71,row+80,31,(['barracks','archery','fort'] as const)[i]!,i===1?2:1,open?'P':null);
-      this.text(['壹','贰','叁'][i]!,43,row+26,14,'#7A4B35',650,'center',true);
+      this.text(['壹','贰','叁'][i]!,43,row+26,14,'#E4B675',650,'center',true);
       this.text(MAPS[id].name,tx,row+28,w<340?16:18,COLORS.ink,650,'left',true);
       this.text(won?'已通关':open?['派兵 · 夺城','塔营 · 升级','整编 · 驰援'][i]!: `先通关第 ${i} 关`,tx,row+52,12,won?COLORS.player:COLORS.muted,500);
       this.button(`lesson-${id}`,won?'重玩':open?'进入':'未解锁',tx,row+67,Math.min(112,tw),44,()=>{if(open)void s.start(id);else this.notify('先完成上一课，即可解锁');},open?'primary':'quiet');
@@ -384,7 +428,7 @@ export class GameView {
   private prepare():void{
     const s=this.session,p=s.profile!,w=this.viewport.width,top=this.header('战前准备'),startY=this.viewport.height-this.viewport.bottom-68;
     const first=this.startScroll(top-10,startY-12),y=top-this.scroll;
-    this.text(MAPS[s.nextMap].name,22,y+10,24,COLORS.ink,700);this.text('你与 3 个电脑，四分钟一局',22,y+43,14,COLORS.muted);
+    this.text(MAPS[s.nextMap].name,22,y+10,24,COLORS.ink,700,'left',true);this.text('你与 3 个电脑，四分钟一局',22,y+43,14,COLORS.muted);
     const mh=Math.min(230,Math.max(120,this.viewport.height-450));this.miniature(s.nextMap,y+66,mh);
     let row=y+mh+92;
     row=this.paragraph('占城最多者胜，同城数比兵力。',22,row,w-44,14,COLORS.ink,22);
@@ -402,7 +446,7 @@ export class GameView {
     const passiveWidth=(w-56)/3;
     for(const [i,id]of PASSIVE_IDS.entries()){
       const x=20+i*(passiveWidth+8),open=p.unlockedCardIds.includes(id);
-      drawCourtyardPanel(this.ctx,x,row,passiveWidth,54,'tile',!open);
+      drawCourtyardPanel(this.ctx,x,row,passiveWidth,54,'tile',!open,true);
       this.text(CARDS[id].short,x+passiveWidth/2,row+18,14,COLORS.ink,650,'center',true);
       this.text(open?`${count(p.passiveLevels[id])} 层`:'未解锁',x+passiveWidth/2,row+39,11,COLORS.muted,400,'center');
       this.regions.push({id:`prepare-card-${id}`,label:`查看${CARDS[id].name}，${open?`${p.passiveLevels[id]}层`:'未解锁'}`,x,y:row,w:passiveWidth,h:54,run:()=>this.openCardDetails(id)});
@@ -418,20 +462,25 @@ export class GameView {
     const s=this.session,b=s.match!.battle,{width:w,height:h,top,bottom}=this.viewport;
     const boardTop=top+52,footer=72,boardHeight=h-bottom-footer-boardTop;const k=this.boardScale;
     this.board={x:(w-360*k)/2,y:boardTop+(boardHeight-540*k)/2,k};
+    const nightPanel=this.nightPanel;this.nightPanel=false;
     const terrainPoint=(p:Point)=>this.point(p);
     const terrainEdges=b.ruleRevision==='1.6'?MAPS[b.mapId].roads:b.camps.flatMap((c,i)=>b.camps.slice(i+1).map(z=>[c.id,z.id] as const));
     const terrainRoutes=terrainEdges.flatMap(([a,z])=>{const from=b.camps.find(c=>c.id===a),to=b.camps.find(c=>c.id===z);return from&&to?[{from:terrainPoint(from),to:terrainPoint(to)}]:[];});
     const centers=b.camps.map(terrainPoint),landforms=b.ruleRevision==='1.6'?battlefieldLandforms(w,h-bottom-footer,centers,terrainRoutes,b.mapId):null;
     drawTerrain(this.ctx,w,h-bottom-footer,centers,b.mapId,terrainRoutes);
     if(landforms){this.ctx.save();this.ctx.beginPath();this.ctx.rect(0,0,w,h-bottom-footer);this.ctx.clip();drawBattlefieldLandforms(this.ctx,landforms,b.mapId);this.ctx.restore();}
+    const fieldShade=this.ctx.createLinearGradient(0,0,0,h-bottom-footer);
+    fieldShade.addColorStop(0,'#211A1766');fieldShade.addColorStop(.24,'#2C211611');
+    fieldShade.addColorStop(.72,'#2C211600');fieldShade.addColorStop(1,'#211A1766');
+    this.ctx.fillStyle=fieldShade;this.ctx.fillRect(0,0,w,h-bottom-footer);
     const pausePressed=this.gesture?.region?.id==='pause'&&!this.gesture.drag;
     if(interactive){
       drawGameControl(this.ctx,18,top+8,32,'pause',pausePressed);
       this.regions.push({id:'pause',label:'暂停',x:12,y:top+2,w:44,h:44,run:()=>{this.cancel();void s.pause();}});
     }
     const clockWidth=Math.min(88,w-200);
-    this.box((w-clockWidth)/2,top+7,clockWidth,33,'#302D27ED',3,'#AC8C59');
-    this.box(w-98,top+10,86,28,'#302D27E8',3,'#8C7755');
+    drawCourtyardHeading(this.ctx,(w-clockWidth)/2,top+7,clockWidth,33);
+    drawCourtyardHeading(this.ctx,w-98,top+10,86,28);
     const stats=battleStats(b),owned=stats.find(st=>st.faction==='P')!.camps;
     const alert=this.threats.update(b);if(alert.fresh&&s.page==='battle')this.onThreat();
     this.text(b.deadlineMs!==null?time(b.deadlineMs-b.gameMs):time(b.gameMs),w/2,top+23,20,'#F3E1BC',650,'center');
@@ -568,16 +617,11 @@ export class GameView {
       drawArmyPennant(this.ctx,r,p,a.faction,a.remainingCount,hit,animateMarch?Math.sin(b.gameMs/140+a.departedAtMs)*1.2:0);
       if(hit)this.text(`−${hit}`,r.x+r.w/2,r.y>=bounds.y+18?r.y-8:r.y+r.h+9,12,COLORS.enemy1,700,'center');
     }
-    if(!interactive)return;
+    if(!interactive){this.nightPanel=nightPanel;return;}
     for(const [campId,r]of upgradeTargets){
       const camp=b.camps.find(c=>c.id===campId)!,id=`upgrade-camp-${campId}`;
       const pressed=g?.region?.id===id&&!g.drag;
-      this.ctx.save();this.ctx.lineJoin='round';this.ctx.lineCap='round';
-      const cx=r.x+10,cy=r.y+22+(pressed?1:0);
-      this.ctx.beginPath();this.ctx.moveTo(cx-4,cy);this.ctx.lineTo(cx,cy-4);this.ctx.lineTo(cx+4,cy);
-      this.ctx.moveTo(cx,cy-4);this.ctx.lineTo(cx,cy+4);
-      this.ctx.strokeStyle='#F4E9CF';this.ctx.lineWidth=3.5;this.ctx.stroke();
-      this.ctx.strokeStyle=pressed?'#424E39':'#686F42';this.ctx.lineWidth=1.5;this.ctx.stroke();this.ctx.restore();
+      this.upgradeArrow(r.x+10,r.y+22+(pressed?1:0),pressed);
       const tier=camp.tier,matchId=b.id;
       this.regions.push({id,label:`升级${CAMP_CONFIG[camp.type].name}，消耗 ${UPGRADE[tier as 1|2].cost} 兵`,...r,run:()=>this.commitUpgrade(campId,tier,matchId)});
     }
@@ -608,6 +652,7 @@ export class GameView {
       this.battleCards(fy);
     }
       if(selected&&!this.card&&!g?.drag)this.campSummary(selected,fy);
+    this.nightPanel=nightPanel;
   }
   private battleCards(fy:number):void{
       const s=this.session,b=s.match!.battle,w=this.viewport.width,inv=factionOf(b,'P')!.inventory,bw=(w-40)/4;
@@ -664,8 +709,9 @@ export class GameView {
       }).finally(()=>{this.upgradePending=false;});
   }
   private campDetailScreen():void{
+    this.nightPanel=true;
     const b=this.session.match!.battle,camp=b.camps.find(c=>c.id===this.selected);if(!camp){this.campDetailsOpen=false;return;}
-    const w=this.viewport.width,h=this.viewport.height;this.regions=[];this.ctx.fillStyle=COLORS.paper;this.ctx.fillRect(0,0,w,h);
+    const w=this.viewport.width,h=this.viewport.height;this.regions=[];this.courtyardBackdrop();
     const y=this.header('营地详情',()=>{this.campDetailsOpen=false;});
     building(this.ctx,w/2,y+48,48,camp.type,camp.tier,camp.owner);
     campPennant(this.ctx,w/2,y+99,camp.garrison,camp.owner,true,camp.tier);
@@ -823,14 +869,14 @@ export class GameView {
     const s=this.session,m=s.match,{width:w,height:h,top,bottom}=this.viewport;
     if(!m){const y=this.header('对局已暂停');this.wide('home','返回首页',y+50,()=>{s.page='home';});return;}
     this.battle(false);this.regions=[];
-    this.ctx.fillStyle='#142B2AB8';this.ctx.fillRect(0,0,w,h);
+    this.ctx.fillStyle='#19130FBD';this.ctx.fillRect(0,0,w,h);
     const expired=s.expired&&!s.temporary,panelH=Math.min(h-top-bottom-24,(this.pauseDetailsOpen?494:350)+(expired?48:0));
     const x=18,pw=w-36,y=top+(h-top-bottom-panelH)/2;
     this.box(x,y+5,pw,panelH,'#102C2855',24);this.box(x,y,pw,panelH,COLORS.surface,24,'#C9BA96');
     this.text('休整片刻',w/2,y+36,25,COLORS.ink,650,'center',true);
     this.text(`${MAPS[m.battle.mapId].name} · ${time(m.battle.gameMs)}`,w/2,y+65,13,COLORS.muted,500,'center');
     // The backdrop has no input regions; closing resumes only through the session transaction.
-    drawMobileIcon(this.ctx,x+pw-25,y+27,20,'close',COLORS.muted);
+    drawMobileIcon(this.ctx,x+pw-25,y+27,20,'close',this.panelText(COLORS.muted));
     this.regions.push({id:'back',label:'继续对战',x:x+pw-47,y:y+5,w:44,h:44,run:()=>void s.resume()});
     const contentTop=y+83,contentBottom=y+panelH-82,first=this.startScroll(contentTop,contentBottom);
     let row=contentTop+15-this.scroll;
@@ -857,7 +903,7 @@ export class GameView {
     if(!r){this.paragraph('本局已处理，记录已保存。',22,y+30,w-44);this.wide('result-home','返回首页',y+100,()=>void s.acknowledge());return;}
     const first=this.startScroll(start-8,bottom-151),won=r.independentWinner==='P',tied=r.playerRank===1&&!won;
     const compact=bottom-start<540,heroH=compact?80:170,c=this.ctx;
-    c.save();rounded(c,20,y,w-40,heroH,4);c.clip();drawArt(c,'home',20,y,w-40,heroH,'cover');c.fillStyle='#F6F3E766';c.fillRect(20,y,w-40,heroH);c.restore();
+    c.save();rounded(c,20,y,w-40,heroH,4);c.clip();drawArt(c,'home',20,y,w-40,heroH,'cover');c.fillStyle='#1B140F80';c.fillRect(20,y,w-40,heroH);c.restore();
     const entrance=s.profile?.settings.reducedMotion?1:Math.min(1,Math.max(0,(this.now-this.pageStarted)/360));
     c.save();c.translate(w/2,y+heroH*(compact?.3:.44));c.scale(.86+.14*(1-Math.pow(1-entrance,3)),.86+.14*(1-Math.pow(1-entrance,3)));
     if(won)drawGateSeal(c,0,0,compact?36:54);else drawRankStandard(c,0,0,compact?48:72,0);c.restore();
@@ -929,7 +975,7 @@ export class GameView {
       const status=`${card.kind==='active'?'库存':'层数'} ${value}${receivable?` → ${value+1}`:' · 数量超出可保存范围'}`,description=card.kind==='passive'?'本周每局自动，不消耗；重复领取递减提升。':card.description;
       const descriptionY=Math.max(213,57+this.lines(status,w-186,14).length*21+12),bonusY=descriptionY+this.lines(description,w-72,13).length*20+5;
       const itemH=Math.max(136,bonusY+(card.kind==='passive'?20:0));
-      this.box(20,top,w-40,itemH,this.selectedChoice===id?'#E1EDE4':COLORS.surface,14,this.selectedChoice===id?COLORS.player:'#CEBFA1');
+      this.box(20,top,w-40,itemH,this.selectedChoice===id?'#583125':COLORS.surface,14,this.selectedChoice===id?COLORS.player:'#CEBFA1');
       cardSymbol(this.ctx,44,top+24,13,id);this.text(card.name,65,top+23,18,COLORS.ink,650);this.text(card.kind==='active'?'主动':'被动',w-36,top+23,12,COLORS.muted,400,'right');
       this.cardPainting(id,36,top+48,98,147);
       this.paragraph(status,150,top+63,w-186,14,COLORS.player,21);
@@ -950,7 +996,7 @@ export class GameView {
     const left=(w-(cw*n+Math.max(0,n-1)*8))/2;
     for(const [i,id]of choice.candidateIds.entries()){
       const card=CARDS[id],x=left+i*(cw+8),selected=this.selectedChoice===id,value=card.kind==='active'?p.activeInventory[id as ActiveCardId]:p.passiveLevels[id as 'farming'];
-      this.box(x,y,cw,ch,selected?'#E8D8B7':COLORS.surface,4,selected?'#A04B35':'#AA9168');
+      this.box(x,y,cw,ch,selected?'#583125':COLORS.surface,4,selected?'#A04B35':'#AA9168');
       this.cardPainting(id,x+4,y+4,cw-8,ih);
       this.text(card.name,x+cw/2,y+ih+20,w<340?12:13,COLORS.ink,600,'center',true);
       this.text(card.kind==='active'?'主动':'被动',x+cw/2,y+ih+40,11,COLORS.muted,500,'center');
@@ -960,7 +1006,7 @@ export class GameView {
     let row=y+ch+24;
     if(this.selectedChoice&&choice.candidateIds.includes(this.selectedChoice)){
       const id=this.selectedChoice,card=CARDS[id],value=card.kind==='active'?p.activeInventory[id as ActiveCardId]:p.passiveLevels[id as 'farming'];
-      this.text(card.name,24,row,21,COLORS.ink,650);row+=31;
+      this.text(card.name,24,row,21,COLORS.ink,650,'left',true);row+=31;
       row=this.paragraph(`${card.kind==='active'?'库存':'层数'} ${value} → ${value+1}`,24,row,w-48,15,COLORS.player,22)+8;
       row=this.paragraph(card.kind==='passive'?'本周每局自动，不消耗；重复领取递减提升。':card.description,24,row,w-48,14,COLORS.ink,22)+8;
       if(card.kind==='passive'){const limit=id==='logistics'?15:20,label=id==='farming'?'产兵':id==='logistics'?'移速':'容量';row=this.paragraph(`${label} +${(asNumber(passiveBonus(limit,value))*100).toFixed(2)}% → +${(asNumber(passiveBonus(limit,value+1))*100).toFixed(2)}%`,24,row,w-48,14,COLORS.player,22);}
@@ -977,25 +1023,62 @@ export class GameView {
   }
   private openCardDetails(id:CardId):void{this.librarySelection=id;this.detailScroll=0;this.detailMaxScroll=0;this.cardRulesOpen=false;this.gesture=null;}
   private closeCardDetails():void{this.librarySelection=null;this.detailScroll=0;this.detailMaxScroll=0;this.cardRulesOpen=false;this.gesture=null;}
+  private strategySeal(id:CardId,x:number,y:number,size:number,open:boolean):void{
+    const glyphs:Record<CardId,string>={
+      mobilize:'鼓',march:'疾',supply:'援',feint:'火',
+      farming:'粮',logistics:'骑',fortification:'垒',
+    };
+    const ink=open?(CARDS[id].kind==='active'?'#843B2C':'#38564B'):'#746453';
+    this.box(x,y,size,size,open?ink:'#B9A78B',1);
+    this.ctx.strokeStyle=open?'#E9C799':'#746453';
+    this.ctx.lineWidth=1;
+    this.ctx.strokeRect(x+3,y+3,size-6,size-6);
+    this.text(glyphs[id],x+size/2,y+size/2,Math.round(size*.58),open?'#F7E4BB':'#463B2F',700,'center',true);
+  }
   private paintedLibrary():void{
-    const s=this.session,p=s.profile!,w=this.viewport.width,bottom=this.viewport.height-this.viewport.bottom;
-    const top=this.header('策略图鉴',()=>{s.page=s.returnPage;}),first=this.startScroll(top-8,bottom);
-    let row=top-this.scroll;
+    const s=this.session,p=s.profile!,c=this.ctx;
+    const {width,height,bottom}=this.viewport;
+    const background=c.createLinearGradient(0,0,0,height);
+    background.addColorStop(0,'#433229');
+    background.addColorStop(1,'#231B17');
+    c.fillStyle=background;c.fillRect(0,0,width,height);
+    const headerBottom=this.header('策略图鉴',()=>{s.page=s.returnPage;});
+    const pageWidth=Math.min(388,width-32),pageX=(width-pageWidth)/2;
+    const available=height-bottom-headerBottom-16;
+    const pageHeight=Math.min(334,available);
+    const pageY=headerBottom+Math.max(0,Math.round((available-pageHeight)*.25));
+    drawCourtyardPanel(c,pageX,pageY,pageWidth,pageHeight);
+    const start=pageY+17,edge=pageY+pageHeight-34;
+    const first=this.startScroll(start,edge),left=pageX+12,right=pageX+pageWidth-12,gap=6;
+    const cardHeight=Math.max(76,Math.min(108,Math.floor((edge-start-54)/2)));
+    const summaries:Record<CardId,string>={
+      mobilize:'加快征兵',march:'下次提速',supply:'即时补兵',feint:'停产停射',
+      farming:'提升产兵',logistics:'提升移速',fortification:'扩充容量',
+    };
+    let row=start-this.scroll;
     for(const [title,hint,ids]of [['主动锦囊','对局中施放',ACTIVE_IDS],['被动兵法','本周自动生效',PASSIVE_IDS]] as const){
-      this.text(title,22,row+12,16,COLORS.ink,650,'left',true);
-      this.text(hint,w-22,row+12,11,COLORS.muted,400,'right');row+=32;
-      const cw=(w-40-(ids.length-1)*8)/ids.length,ch=108;
+      const active=ids===ACTIVE_IDS,ink=active?'#85382B':'#39564C';
+      this.text(title,left,row+10,15,ink,700,'left',true);
+      this.text(hint,right,row+10,11,'#59402E',400,'right');
+      c.fillStyle='#79533662';c.fillRect(left,row+19,right-left,1);
+      row+=22;
+      const cw=(right-left-(ids.length-1)*gap)/ids.length;
       for(const [i,id]of ids.entries()){
-        const card=CARDS[id],x=20+i*(cw+8),y=row,open=p.unlockedCardIds.includes(id);
-        drawCourtyardPanel(this.ctx,x,y,cw,ch,'tile',!open);
-        const aw=Math.min(62,cw-8);drawStrategyIllustration(this.ctx,x+(cw-aw)/2,y+7,aw,58,id,!open);
-        this.text(card.name,x+cw/2,y+76,w<350?12:14,COLORS.ink,650,'center',true);
-        if(!open)this.text('未解锁',x+cw/2,y+96,10,COLORS.muted,400,'center');
-        this.regions.push({id:`library-${id}`,label:`查看${card.name}，${open?'已解锁':'未解锁'}`,x,y,w:cw,h:ch,run:()=>this.openCardDetails(id)});
+        const card=CARDS[id],cx=left+i*(cw+gap),open=p.unlockedCardIds.includes(id);
+        const pressed=this.gesture?.region?.id===`library-${id}`&&!this.gesture.drag;
+        const cy=row+(pressed?2:0);
+        const sealSize=Math.min(44,cardHeight-38);
+        const center=cx+cw/2;
+        if(pressed){c.fillStyle='#74533520';c.fillRect(cx,cy,cw,cardHeight);}
+        this.strategySeal(id,center-sealSize/2,cy+4,sealSize,open);
+        this.text(card.name,center,cy+sealSize+16,cw<60?11:14,'#362416',650,'center',true);
+        this.text(open?summaries[id]:'未解锁',center,cy+sealSize+31,10,open?ink:'#554E42',400,'center');
+        this.regions.push({id:`library-${id}`,label:`查看${card.name}，${open?'已解锁':'未解锁'}`,x:cx,y:row,w:cw,h:cardHeight,run:()=>this.openCardDetails(id)});
       }
-      row+=ch+(ids===ACTIVE_IDS?24:0);
+      row+=cardHeight+(active?10:0);
     }
-    this.endScroll(first,top-8,bottom,row+12);
+    this.endScroll(first,start,edge,row);
+    this.text('点选军令，查看效果',width/2,edge+15,13,'#674A32',500,'center',true);
   }
   private drawCardSheet():void{
     const id=this.librarySelection!,card=CARDS[id],p=this.session.profile!,c=this.ctx,{width:w,height:h,top,bottom}=this.viewport;
@@ -1010,15 +1093,22 @@ export class GameView {
     const summaryHeight=10+this.lines(effect,bw,15).length*23+8+this.lines(stock,bw,13).length*21+8+(bonus?this.lines(bonus,bw,13).length*21+8:0);
     const contentHeight=summaryHeight+44+(this.cardRulesOpen?12+this.lines(card.description,bw,14).length*23+12+this.lines(expiry,bw,12).length*21+12:0);
     const sh=Math.min(78+contentHeight+66,this.cardRulesOpen?460:380,h-top-bottom-24),sy=top+(h-top-bottom-sh)/2;
-    c.fillStyle='#183B3566';c.fillRect(0,0,w,h);this.regions=[];
+    c.fillStyle='#19130FAC';c.fillRect(0,0,w,h);this.regions=[];
     this.regions.push({id:'card-sheet-scrim',label:'关闭策略说明',x:0,y:top,w,h:h-top-bottom,run:()=>this.closeCardDetails()});
-    this.box(sx,sy+4,sw,sh,'#102C2840',4);this.box(sx,sy,sw,sh,COLORS.surface,4,'#B4A58A');
+    this.box(sx,sy+4,sw,sh,'#102C2840',4);
+    const nightPanel=this.nightPanel;
+    if(catalogue){
+      drawCourtyardPanel(c,sx,sy,sw,sh);
+      this.nightPanel=false;
+    }else this.box(sx,sy,sw,sh,COLORS.surface,4,'#B4A58A');
     this.regions.push({id:'card-sheet-surface',label:'策略说明',x:sx,y:sy,w:sw,h:sh,run:()=>{}});
-    drawStrategyIllustration(c,sx+12,sy+12,48,48,id,catalogue&&!open);
-    drawCourtyardHeading(c,sx+64,sy+13,Math.min(146,sw-118),29);
+    if(catalogue)this.strategySeal(id,sx+17,sy+16,39,open);
+    else drawStrategyIllustration(c,sx+12,sy+12,48,48,id);
+
+    drawCourtyardHeading(c,sx+64,sy+13,Math.min(146,sw-118),29,catalogue);
     this.text(card.name,sx+74,sy+27,18,'#F5E9D0',650,'left',true);
     this.text(hint,sx+70,sy+51,11,COLORS.muted);
-    drawMobileIcon(c,sx+sw-26,sy+26,16,'close',COLORS.muted);
+    drawMobileIcon(c,sx+sw-26,sy+26,16,'close',this.panelText(COLORS.muted));
     this.regions.push({id:'card-sheet-close',label:'关闭',x:sx+sw-48,y:sy+4,w:44,h:44,run:()=>this.closeCardDetails()});
     c.fillStyle='#D7CEBA';c.fillRect(sx+18,sy+68,bw,1);
     const contentTop=sy+78,contentBottom=sy+sh-66,first=this.regions.length;
@@ -1033,6 +1123,7 @@ export class GameView {
     c.restore();
     this.regions=this.regions.flatMap((r,i)=>{if(i<first)return[r];const y=Math.max(contentTop,r.y),edge=Math.min(contentBottom,r.y+r.h);return edge-y>=44?[{...r,y,h:edge-y}]:[];});
     this.button('card-sheet-done','知道了',w/2-65,sy+sh-54,130,44,()=>this.closeCardDetails(),'primary');
+    this.nightPanel=nightPanel;
   }
   private ranks():void{
     const p=this.session.profile!,w=this.viewport.width,start=this.header('军衔册',()=>{this.session.page=this.session.returnPage;}),y=start-this.scroll,bottom=this.viewport.height-this.viewport.bottom,first=this.startScroll(start-10,bottom);
@@ -1061,70 +1152,154 @@ export class GameView {
     this.endScroll(first,start-10,bottom,row+12);
   }
 
-  private settings():void{
-    const s=this.session,p=s.profile,{width:w,height:h,top,bottom}=this.viewport,c=this.ctx;
-    if(s.returnPage==='pause'&&s.match)this.battle(false);
-    else if(!drawArt(c,'home',0,0,w,h,'cover'))drawHomeScene(c,0,0,w,h);
-    this.regions=[];c.fillStyle='#142B2AB8';c.fillRect(0,0,w,h);
-    const art=getArtStatus(),pw=Math.min(360,w-32),x=(w-pw)/2,ph=Math.min(h-top-bottom-24,art.failed?490:400),y=top+(h-top-bottom-ph)/2;
-    this.box(x,y+5,pw,ph,'#102C2855',24);this.box(x,y,pw,ph,COLORS.surface,24,'#C9BA96');
-    drawCourtyardHeading(c,w/2-62,y+14,124,35);this.text('设置',w/2,y+32,22,'#F5E9D0',650,'center',true);
-    const close=()=>{s.page=s.returnPage;};
-    drawMobileIcon(c,x+pw-28,y+29,20,'close',COLORS.muted);
-    this.regions.push({id:'back',label:'关闭设置',x:x+pw-50,y:y+7,w:44,h:44,run:close});
-    const start=y+68,edge=y+ph-76,first=this.startScroll(start,edge),row=start-this.scroll;
-    if(!p)this.paragraph('存档尚未恢复，可关闭查看恢复选项。',x+22,row+22,pw-44,14,COLORS.muted,23);
-    else{
-      for(const [i,[key,name]]of ([['sound','声音'],['vibration','震动'],['reducedMotion','减少动态']] as const).entries()){
-        const yy=row+i*50,enabled=p.settings[key],sx=x+pw-74;
-        this.text(name,x+22,yy+25,16,COLORS.ink,550);c.fillStyle='#D2C7AF';c.fillRect(x+20,yy+49,pw-40,1);
-        drawCourtyardSwitch(c,sx,yy+12,54,29,enabled);
-        this.text(enabled?'开':'关',enabled?sx+15:sx+39,yy+26.5,10,enabled?'#F4E4BF':'#DED8C9',650,'center',true);
-        this.regions.push({id:`setting-${key}`,label:`${name}：${enabled?'开启':'关闭'}`,x:x+16,y:yy,w:pw-32,h:48,run:()=>void s.setting(key)});
-        if(key==='sound'&&enabled&&this.soundPreview)this.textButton('test-sound','试听',sx-68,yy+3,56,44,()=>{if(this.session.profile?.settings.sound)this.soundPreview?.();});
-      }
-      this.textButton('about','玩法与关于 ›',x+20,row+150,pw-40,44,()=>{s.page='about';});
-      this.textButton('reset','清除本地游戏记录',x+20,row+198,pw-40,44,()=>{this.modal={title:'清除全部本地记录？',body:'军功、最高、教学、解锁、策略、周进度、当前对局和设置全部清除，无法从好友榜找回。仅影响本游戏本机记录，不删除本人托管成绩。',label:'确认清除本地',run:()=>void s.reset()};});
+  private tentDesk(title:string,close:()=>void,backLabel=title==='设置'?'关闭设置':'返回设置'):{x:number;pw:number;start:number;edge:number}{
+    const {width:w,height:h,top,bottom}=this.viewport,c=this.ctx;
+    const pw=Math.min(368,w-32),x=(w-pw)/2;
+    // The painted desk occupies the middle of the scene. Keep all scrolling
+    // text on that surface, with the title and exit outside the cloth.
+    const start=Math.max(top+58,Math.ceil(h*.318));
+    const edge=Math.min(h-bottom-60,Math.floor(h*.754));
+    const painted=drawArt(c,'field-tent',0,0,w,h,'stretch');
+    if(!painted){
+      this.courtyardBackdrop();
+      drawCourtyardPanel(c,12,start-4,w-24,edge-start+8);
     }
-    let end=row+(p?246:84);
-    if(p&&art.failed){end=this.paragraph('部分画面未载入，可重新载入。',x+22,end,pw-44,14,COLORS.muted,24)+12;this.button('retry-art','重新载入画面资源',x+20,end,pw-40,48,()=>{void retryArt().then(()=>this.notify(getArtStatus().failed?'部分画面仍未载入，可稍后重试':'画面资源已载入'));});end+=60;}
-    this.endScroll(first,start,edge,end);
-    this.button('settings-done','完成',x+20,y+ph-62,pw-40,46,close,'primary');
+    this.regions=[];
+    const titleWidth=title.length>2?126:94;
+    drawCourtyardHeading(c,x+8,top+8,titleWidth,38,true);
+    this.text(title,x+8+titleWidth/2,top+27,title.length>2?20:24,'#F5E9D0',750,'center',true);
+    this.returnPlaque(x+pw-4,top+5,close,backLabel);
+    return {x,pw,start,edge};
   }
-  private quickGuide(start:number):void{
-    const c=this.ctx,w=this.viewport.width,edge=this.viewport.height-this.viewport.bottom,first=this.startScroll(start-8,edge);
-    const phase=this.session.profile?.settings.reducedMotion ? .45 :((this.now-this.pageStarted)%2200)/2200;
-    const items=[['派兵夺城','拖到相邻城，派出一半兵。'],['驻兵升级','点檐角箭头升级。30兵可耗10兵升二级；70兵可耗25兵升三级。'],['施放锦囊','点锦囊，再点目标。兼行选中后随出兵生效。']] as const;
-    let y=start-this.scroll;
-    for(const [i,[title,body]]of items.entries()){
-      const height=Math.max(126,74+this.lines(body,w-180,13).length*22);
-      this.box(20,y,w-40,height,'#F4EFE3',14,'#C4BCA6');
-      this.text(title,144,y+28,18,COLORS.ink,650,'left',true);this.paragraph(body,144,y+58,w-180,13,COLORS.muted,22);
-      c.save();rounded(c,28,y+14,102,98,10);c.clip();c.fillStyle='#D9DDD2';c.fillRect(28,y+14,102,98);
-      if(i===0){
-        building(c,51,y+62,21,'barracks',1,'P');building(c,108,y+62,21,'barracks',1,null);
-        arrow(c,{x:53,y:y+84},{x:106,y:y+84},COLORS.player,2);
-        c.fillStyle='#FFFDF1';c.strokeStyle=COLORS.player;c.lineWidth=2;c.beginPath();c.arc(53+phase*53,y+84,5,0,Math.PI*2);c.fill();c.stroke();
-      }else if(i===1){
-        building(c,77,y+77,30,'barracks',2,'P');drawMobileIcon(c,77,y+35,24,'upgrade',COLORS.player);
-        c.strokeStyle='#C19A52';c.lineWidth=2;c.globalAlpha=.35+.45*(1-phase);c.beginPath();c.ellipse(77,y+87,20+phase*15,8+phase*6,0,0,Math.PI*2);c.stroke();
-      }else{
-        building(c,105,y+75,22,'archery',1,'P');
-        this.box(37,y+29,28,38,'#FFFBEE',5,'#BBA46C');cardSymbol(c,51,y+48,10,'supply');
-        c.strokeStyle=COLORS.player;c.lineWidth=1.5;c.beginPath();c.arc(phase<.5?51:105,phase<.5?y+49:y+75,5+(phase%.5)*8,0,Math.PI*2);c.stroke();
+
+  private settings():void{
+    const s=this.session,p=s.profile,{width:w,height:h,bottom}=this.viewport,c=this.ctx;
+    const close=()=>{s.page=s.returnPage;};
+    const {x,pw,start,edge}=this.tentDesk('设置',close),art=getArtStatus();
+    const first=this.startScroll(start,edge),row=start-this.scroll;
+    if(!p)this.paragraph('存档尚未恢复，可关闭查看恢复选项。',x+22,row+22,pw-44,14,'#59402E',23);
+    else{
+      this.text('声音与画面',x+30,row+11,14,'#653A24',700,'left',true);
+      const controlsY=row+24,rowHeight=54;
+      const controls=[
+        ['sound','声音','播放游戏音效'],
+        ['vibration','震动','夺城时震动'],
+        ['reducedMotion','减少动态','减少装饰动效'],
+      ] as const;
+      for(const [i,[key,name,description]]of controls.entries()){
+        const yy=controlsY+i*rowHeight,enabled=p.settings[key],sx=x+pw-88;
+        const pressed=this.gesture?.region?.id===`setting-${key}`&&!this.gesture.drag;
+        if(pressed){
+          c.fillStyle='#82402824';
+          c.fillRect(x+22,yy+3,pw-44,rowHeight-6);
+        }
+        this.text(name,x+31,yy+18,18,'#32251B',650,'left',true);
+        this.text(description,x+31,yy+39,12,'#4D3523');
+        if(i>0){c.fillStyle='#6A462A59';c.fillRect(x+30,yy,pw-60,1);}
+        const sealY=yy+12+(pressed?2:0);
+        drawSettingSeal(c,sx+10,sealY,50,30,enabled);
+        this.text(enabled?'开':'关',sx+35,sealY+15,18,enabled?'#FFF1D0':'#4C3827',750,'center',true);
+        this.regions.push({id:`setting-${key}`,label:`${name}：${enabled?'开启':'关闭'}`,x:x+18,y:yy,w:pw-36,h:rowHeight,run:()=>void s.setting(key)});
+        if(key==='sound'&&enabled&&this.soundPreview){
+          const auditionX=sx-50;
+          this.text('试听',auditionX+22,yy+28,12,'#783C28',650,'center');
+          c.fillStyle='#9B6447';c.fillRect(auditionX+10,yy+37,24,1);
+          this.regions.push({id:'test-sound',label:'试听',x:auditionX,y:yy+6,w:44,h:44,run:()=>{if(this.session.profile?.settings.sound)this.soundPreview?.();}});
+        }
       }
-      c.restore();y+=height+12;
+      this.text('帮助与记录',x+30,row+207,14,'#653A24',650,'left',true);
+      const utility=(id:string,label:string,yy:number,color:string,run:()=>void)=>{
+        const pressed=this.gesture?.region?.id===id&&!this.gesture.drag;
+        if(pressed){c.fillStyle='#A5815926';c.fillRect(x+18,yy,pw-36,44);}
+        c.fillStyle='#6A462A59';c.fillRect(x+30,yy+43,pw-60,1);
+        const icon=id==='about'?'cards':'info';
+        drawMobileIcon(c,x+36,yy+22,16,icon,color);
+        this.text(label,x+52,yy+22,16,color,550,'left',true);
+        drawMobileIcon(c,x+pw-39,yy+22,14,'chevron',color);
+        this.regions.push({id,label,x:x+18,y:yy,w:pw-36,h:44,run});
+      };
+      utility('about','玩法与关于',row+220,'#342216',()=>{s.page='about';});
+      utility('reset','清除本地游戏记录',row+265,'#742B1C',()=>{
+        this.modal={title:'清除全部本地记录？',body:'军功、最高、教学、解锁、策略、周进度、当前对局和设置全部清除，无法从好友榜找回。仅影响本游戏本机记录，不删除本人托管成绩。',label:'确认清除本地',run:()=>void s.reset()};
+      });
+    }
+    let end=row+(p?310:50);
+    if(p&&art.failed){end=this.paragraph('部分画面未载入，可重新载入。',x+22,end,pw-44,14,'#59402E',24)+12;this.button('retry-art','重新载入画面资源',x+20,end,pw-40,48,()=>{void retryArt().then(()=>this.notify(getArtStatus().failed?'部分画面仍未载入，可稍后重试':'画面资源已载入'));});end+=60;}
+    this.endScroll(first,start,edge,end);
+    const doneWidth=Math.min(164,pw-40);
+    this.button('settings-done','完成',(w-doneWidth)/2,Math.min(h-bottom-54,Math.round(h*.85)),doneWidth,46,close,'primary');
+  }
+  private upgradeArrow(x:number,y:number,pressed=false):void{
+    const c=this.ctx;
+    c.save();c.lineJoin='round';c.lineCap='round';
+    c.beginPath();c.moveTo(x-4,y);c.lineTo(x,y-4);c.lineTo(x+4,y);
+    c.moveTo(x,y-4);c.lineTo(x,y+4);
+    c.strokeStyle='#F4E9CF';c.lineWidth=3.5;c.stroke();
+    c.strokeStyle=pressed?'#424E39':'#686F42';c.lineWidth=1.5;c.stroke();c.restore();
+  }
+
+  private quickGuide(start:number,edge:number):void{
+    const c=this.ctx,w=this.viewport.width,first=this.startScroll(start-8,edge);
+    const reduced=this.session.profile?.settings.reducedMotion;
+    const phase=reduced?.45:((this.now-this.pageStarted)%2200)/2200;
+    const items=[
+      ['壹','派兵夺城','从己方城池拖向道路相连的邻城，派出当前一半驻军。'],
+      ['贰','驻兵升级','点城池檐角的向上箭头。30兵可耗10兵升二级，70兵可耗25兵升三级。'],
+      ['叁','施放锦囊','先点底部锦囊，再点目标城池。兼行选中后随下一次派兵生效。'],
+    ] as const;
+    let y=start-this.scroll;
+    for(const [i,[chapter,title,body]]of items.entries()){
+      const bodyLines=this.lines(body,w-72,14);
+      const frameHeight=172+bodyLines.length*21;
+      drawCourtyardPanel(c,16,y,w-32,frameHeight,'panel',false,true);
+      this.box(28,y+12,25,24,'#813C2B',2);
+      this.text(chapter,40.5,y+24,14,'#F8E7C4',650,'center',true);
+      this.text(title,63,y+24,19,'#F3DFC0',700,'left',true);
+      const mapY=y+47,left=83,right=w-78,groundY=mapY+62;
+      c.save();c.beginPath();c.rect(28,mapY,w-56,112);c.clip();
+      c.fillStyle='#B69565';c.fillRect(28,mapY,w-56,112);
+      drawArt(c,'terrain-plains',28,mapY,w-56,112,'cover');
+      const camp=(x:number,tier:1|2,count:number,owner:'P'|null,type:'barracks'|'archery'='barracks')=>{
+        building(c,x,groundY-6,32,type,tier,owner);
+        campPennant(c,x,groundY+22,count,owner,false,tier);
+      };
+      if(i===0){
+        c.beginPath();c.moveTo(left,groundY);c.lineTo(right,groundY);
+        c.strokeStyle='#705439';c.lineWidth=7;c.stroke();
+        c.strokeStyle='#CEAD73';c.lineWidth=4;c.stroke();
+        camp(left,1,10,'P');camp(right,1,8,null,'archery');
+        const marchX=left+31+(right-left-59)*phase;
+        marchingSoldier(c,marchX,groundY,'infantry','P',1,0,0,1,reduced?0:Math.floor(phase*6));
+        flag(c,marchX-7,groundY-18,5,'P');
+      }else if(i===1){
+        camp(left,1,30,'P');camp(right,2,20,'P');
+        this.upgradeArrow(left+15,groundY-12,phase>.55);
+        arrow(c,{x:left+31,y:groundY-2},{x:right-32,y:groundY-2},'#E5CB94',2);
+      }else{
+        drawOrderCard(c,left-33,mapY+22,66,54,'supply',phase<.5,false,true);
+        this.text('乡勇',left,mapY+33,14,'#32251B',650,'center',true);
+        this.text('×1',left+19,mapY+65,12,'#FFF1D4',650,'center');
+        if(phase>=.5)this.targetHalo({x:right,y:groundY},COLORS.player,true);
+        camp(right,1,20,'P','archery');
+      }
+      c.restore();
+      this.paragraph(body,36,mapY+130,w-72,14,'#E4CCAA',21);
+      y+=frameHeight+14;
     }
     this.endScroll(first,start-8,edge,y+8);
   }
   private about():void{
-    const w=this.viewport.width,header=this.header('玩法与关于',()=>{this.session.page='settings';}),y=header+60;
+    const {width:w,height:h,bottom}=this.viewport,c=this.ctx;
+    drawArt(c,'terrain-plains',0,0,w,h,'cover');
+    c.fillStyle='#1B1612BB';c.fillRect(0,0,w,h);
+    const start=this.header('战地手册',()=>{this.session.page='settings';});
+    const x=16,pw=w-32,edge=h-bottom-16,tabWidth=(pw-24)/2;
+    const y=start+58;
     const change=(rules:boolean)=>{this.aboutRulesOpen=rules;this.aboutSection=null;this.scroll=0;};
-    this.button('about-guide','操作图解',20,header,(w-48)/2,44,()=>change(false),this.aboutRulesOpen?'quiet':'secondary');
-    this.button('about-rules','详细规则',28+(w-48)/2,header,(w-48)/2,44,()=>change(true),this.aboutRulesOpen?'secondary':'quiet');
-    this.box((this.aboutRulesOpen?28+(w-48)/2:20)+14,header+40,(w-48)/2-28,3,COLORS.player,1);
-    if(!this.aboutRulesOpen){this.quickGuide(y);return;}
-    this.ctx.save();this.ctx.beginPath();this.ctx.rect(0,y-8,w,this.viewport.height-y-this.viewport.bottom);this.ctx.clip();
+    this.button('about-guide','操作图解',x+8,start,tabWidth,44,()=>change(false),this.aboutRulesOpen?'secondary':'primary');
+    this.button('about-rules','详细规则',x+16+tabWidth,start,tabWidth,44,()=>change(true),this.aboutRulesOpen?'primary':'secondary');
+    if(!this.aboutRulesOpen){this.quickGuide(y,edge);return;}
+    const first=this.startScroll(y-8,edge);
     const sections=[
       ['夺城与守城','拖到道路相连的邻城，派出当前一半兵力。轻点查询产速与容量，点檐角箭头升级；最后一城失守即淘汰。旧版进行中对局仍可直达，结束后新局采用道路规则。'],
       ['四类营地','新局一级步营每秒 0.9 兵，弓／骑营 0.6，塔营 0.3。基础移速 24，骑兵 33.6。兵种取决于出发营地，到达友营或占领后整编。行军不会自然增兵，受箭塔攻击会减员。'],
@@ -1136,20 +1311,26 @@ export class GameView {
       ['保存与隐私','每 5 游戏秒保存检查点，消费、升级、结果、领奖立即完整保存。后台不补算；恢复需明确继续，现实超过 24 小时不能续战。离线核心使用本机存储；好友榜不等于云存档。'],
       ['版本与原创',`谋定山河 0.1.0 · 新局规则 v1.6，保留 v1.5 旧局。原创设色山水与建筑插画，士兵、军旗和界面由 Canvas 绘制。画面资源 ${getArtStatus().ready}/${getArtStatus().total}。本地玩家与电脑对战。`],
     ];
-    const scrollLimit=(section:number|null)=>Math.max(0,y+sections.length*60+(section===null?0:this.lines(sections[section]![1]!,w-48,15).length*24+18)-this.viewport.height+this.viewport.bottom+12);
+    const scrollLimit=(section:number|null)=>Math.max(0,y+sections.length*60+(section===null?0:this.lines(sections[section]![1]!,w-48,15).length*24+18)-edge+12);
     this.maxScroll=scrollLimit(this.aboutSection);this.scroll=Math.min(this.scroll,this.maxScroll);
     let row=y-this.scroll;
-    const first=this.regions.length;
     for(const [i,[title,body]]of sections.entries()){
-      this.button(`about-section-${i}`,`${title} ${this.aboutSection===i?'−':'+'}`,20,row,w-40,48,()=>{this.aboutSection=this.aboutSection===i?null:i;this.scroll=Math.min(i*60,scrollLimit(this.aboutSection));},'quiet');row+=60;
-      if(this.aboutSection===i)row=this.paragraph(body!,24,row,w-48,15,COLORS.muted,24)+18;
+      const label=`${title} ${this.aboutSection===i?'−':'+'}`;
+      drawCourtyardHeading(c,24,row,w-48,48,this.aboutSection===i);
+      this.text(label,38,row+24,17,'#F3DFC0',650,'left',true);
+      this.regions.push({id:`about-section-${i}`,label,x:24,y:row,w:w-48,h:48,run:()=>{
+        this.aboutSection=this.aboutSection===i?null:i;
+        this.scroll=Math.min(i*60,scrollLimit(this.aboutSection));
+      }});
+      row+=60;
+      if(this.aboutSection===i)row=this.paragraph(body!,24,row,w-48,15,'#E4CCAA',24)+18;
     }
     this.ctx.restore();
-    this.regions=this.regions.filter((r,i)=>i<first||r.y>=y-8&&r.y+r.h<=this.viewport.height-this.viewport.bottom);
+    this.regions=this.regions.filter((r,i)=>i<first||r.y>=y-8&&r.y+r.h<=edge);
   }
 
   private recovery():void{
-    const s=this.session,w=this.viewport.width,start=this.header('记录需要处理',s.profile?()=>{s.page='home';}:null),y=start-this.scroll,bottom=this.viewport.height-this.viewport.bottom,first=this.startScroll(start-10,bottom);this.text('请先确认本地记录',22,y+20,26,COLORS.ink,700);
+    const s=this.session,w=this.viewport.width,start=this.header('记录需要处理',s.profile?()=>{s.page='home';}:null),y=start-this.scroll,bottom=this.viewport.height-this.viewport.bottom,first=this.startScroll(start-10,bottom);this.text('请先确认本地记录',22,y+20,26,COLORS.ink,700,'left',true);
     const row=this.paragraph(s.error||'当前对局需要确认后继续。',22,y+70,w-44,16,COLORS.muted,26);
     this.wide('retry-load','重新读取',row+25,()=>void s.load(),true);
     if(s.backup)this.wide('recover-backup','恢复可用副本',row+88,()=>{this.modal={title:'恢复较早的完整副本？',body:`将恢复到 ${new Date(s.backup!.writtenAt).toLocaleString('zh-CN')}。后续尚未确认的进度可能回退；不会混合两份库存或补发奖励。`,label:'确认恢复',run:()=>void s.recover()};});
@@ -1158,15 +1339,25 @@ export class GameView {
     this.endScroll(first,start-10,bottom,row+275);
   }
   private leaderboard():void{
-    const s=this.session,p=s.profile,w=this.viewport.width,y=this.header('好友周榜');this.text(`本机本周 ${p?.qualifiedArenaWins??0} 胜`,22,y+20,27,COLORS.ink,700);
+    const s=this.session,p=s.profile,w=this.viewport.width,y=this.header('好友周榜');this.text(`本机本周 ${p?.qualifiedArenaWins??0} 胜`,22,y+20,27,COLORS.ink,700,'left',true);
     this.paragraph('比较本周标准四方对电脑的独立冠军次数。同分并列，不是真人对战。',22,y+75,w-44,16,COLORS.ink,26);
     this.box(20,y+153,w-40,148);this.paragraph('当前平台未启用微信好友能力。你仍可离线对战，军功与策略照常保存在本机。',36,y+183,w-72,15,COLORS.muted,25);
     this.paragraph('榜单不是云存档；不开启不会上传你的成绩，也不会请求好友资料。',22,y+334,w-44,14,COLORS.muted,24);
   }
   private drawModal():void{
-    const m=this.modal!,{width:w,height:h}=this.viewport;this.ctx.save();this.ctx.globalAlpha=this.session.profile?.settings.reducedMotion?1:.82+.18*Math.min(1,Math.max(0,(this.now-this.modalStarted)/180));this.regions=[];this.ctx.fillStyle='#253B4573';this.ctx.fillRect(0,0,w,h);
-    const y=Math.max(this.viewport.top+20,h/2-165);this.box(20,y,w-40,330,COLORS.surface,20);this.text(m.title,40,y+37,21,COLORS.ink,700);
-    this.paragraph(m.body,40,y+84,w-80,15,COLORS.muted,25);
+    const m=this.modal!,{width:w,height:h}=this.viewport;this.ctx.save();this.ctx.globalAlpha=this.session.profile?.settings.reducedMotion?1:.82+.18*Math.min(1,Math.max(0,(this.now-this.modalStarted)/180));this.regions=[];this.ctx.fillStyle='#19130FA0';this.ctx.fillRect(0,0,w,h);
+    const reset=m.label==='确认清除本地';
+    const y=Math.max(this.viewport.top+20,h/2-165);
+    if(reset){
+      drawCourtyardPanel(this.ctx,20,y,w-40,330);
+      drawCourtyardHeading(this.ctx,36,y+18,Math.min(220,w-72),38,true);
+      this.text(m.title,46,y+37,20,'#F5E9D0',700,'left',true);
+      this.paragraph(m.body,40,y+84,w-80,15,'#4D3523',25);
+    }else{
+      this.box(20,y,w-40,330,COLORS.surface,20);
+      this.text(m.title,40,y+37,21,COLORS.ink,700,'left',true);
+      this.paragraph(m.body,40,y+84,w-80,15,COLORS.muted,25);
+    }
     this.button('modal-cancel','取消',40,y+258,(w-92)/2,48,()=>{this.modal=null;},'secondary');
     this.button('modal-confirm',m.label,52+(w-92)/2,y+258,(w-92)/2,48,()=>{this.modal=null;m.run();},'danger');
     this.ctx.restore();

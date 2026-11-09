@@ -1482,7 +1482,7 @@ test('U04 S10: closing the pause panel resumes temporary practice and preserves 
 test('P3: page and confirmation fade for 180 UI ms, or stay static in reduced motion, with immediate actions',async()=>{
   for(const reduced of [false,true]){
     const {s,v,d,data}=await readyCards();s.profile!.settings.reducedMotion=reduced;await s.pause();const before=JSON.stringify(s.profile),bytes=[...data];
-    const washes:number[]=[];d.ctx.fillRect=(x,y,w,h)=>{if(x===0&&y===0&&w===375&&h===812&&d.ctx.fillStyle===COLORS.paper&&d.ctx.globalAlpha<1)washes.push(d.ctx.globalAlpha);};
+    const washes:number[]=[];d.ctx.fillRect=(x,y,w,h)=>{if(x===0&&y===0&&w===375&&h===812&&d.ctx.fillStyle==='#171311'&&d.ctx.globalAlpha<1)washes.push(d.ctx.globalAlpha);};
     v.draw(100);if(reduced)assert.equal(washes.length,0);else assert.ok(washes.some(a=>Math.abs(a-.18)<.001));assert.ok(v.regions.some(r=>r.id==='resume'));
     washes.length=0;v.draw(190);if(reduced)assert.equal(washes.length,0);else assert.ok(washes.some(a=>Math.abs(a-.09)<.001));washes.length=0;v.draw(280);assert.equal(washes.length,0);
     v.draw(5000);assert.equal(washes.length,0);assert.equal(JSON.stringify(s.profile),before);assert.deepEqual([...data],bytes);
