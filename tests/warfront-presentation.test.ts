@@ -37,7 +37,7 @@ for(const [width,height]of [[320,568],[375,812],[430,932]])test(`battle depth ${
   b.gameMs=b.armies[0]!.arrivalAtMs-300;
   const before=JSON.stringify(h.session.profile);h.view.draw(100);
   const point=(h.view as unknown as {point(p:{x:number;y:number}):{x:number;y:number}}).point(b.camps.find(c=>c.id==='A01-N2')!);
-  const roof=h.paints.findIndex(p=>p.src.endsWith('warfront-camps.png')&&Math.abs(p.x-point.x)<.01&&Math.abs(p.y-(point.y-6))<.01);
+  const roof=h.paints.findIndex(p=>p.src.endsWith('siege-camps.png')&&Math.abs(p.x-point.x)<.01&&Math.abs(p.y-(point.y-6))<.01);
   const head=(h.view as unknown as {point(p:{x:number;y:number}):{x:number;y:number}}).point(armyPosition(b.armies[0]!,b.gameMs));
   const leader=h.paints.findIndex(p=>Math.abs(p.x-head.x)<.01&&Math.abs(p.y-head.y)<.01);
   assert.ok(roof>=0&&leader>=0,'both authoritative camp and marching head are visible');

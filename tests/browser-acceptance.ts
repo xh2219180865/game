@@ -1,3 +1,5 @@
+import {loadBrowserFont} from '../src/platform/fonts.ts';
+import {getFontRevision} from '../src/render/typography.ts';
 import { GameSession, type SessionPresentation } from '../src/app/session.ts';
 import { GameView } from '../src/render/game.ts';
 import { CARD_IDS, nextWeekAt, weekIdAt } from '../src/core/progress.ts';
@@ -11,6 +13,8 @@ import { armyPosition } from '../src/core/geometry.ts';
 import { loadArt } from '../src/render/assets.ts';
 
 await loadArt(()=>new Image());
+let fontIssue='';
+await loadBrowserFont(message=>{fontIssue=message;});
 
 // Separate test entry: never bundled into either shipping platform.
 const canvas=document.querySelector<HTMLCanvasElement>('canvas')!,ctx=canvas.getContext('2d')!;
@@ -248,6 +252,7 @@ function render(){
     `结算计时 ${JSON.stringify(settlementTiming)}`,
     ...(scenario==='dispatch-growth'?[`拖拽时钟预设：按下 21 兵；首次移动推进 1 秒；松手前推进 2 秒。`, `拖拽绘制记录 ${JSON.stringify(growthTrace)}`]:[]),
     `表现设置 ${JSON.stringify(session.profile?.settings)}`,
+    `题字字体 ${getFontRevision()>0?'本地文楷已载入':`系统回退 ${fontIssue}`}`,
     ...(['card-identity','passive-reward'].includes(scenario??'')?[`本周被动 ${JSON.stringify(session.profile?.passiveLevels)} · 局内被动 ${JSON.stringify(b?.factions.find(f=>f.id==='P')?.passives)}`]:[]),
     ...(['card-identity','passive-reward'].includes(scenario??'')?[`会话表现通知 ${JSON.stringify(presentations)}`]:[]),
     ...(highFeedback?[`本周被动 ${JSON.stringify(session.profile?.passiveLevels)} · 局内被动 ${JSON.stringify(b?.factions.find(f=>f.id==='P')?.passives)}`,`反馈重放 ${JSON.stringify(feedbackReplay)}`]:[]),

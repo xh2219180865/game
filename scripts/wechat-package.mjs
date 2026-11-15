@@ -1,3 +1,4 @@
+import { FONT_FILES } from '../src/render/typography.ts';
 import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
@@ -12,6 +13,8 @@ export async function syncArt(destination, sources){
     if(entry.isFile()&&/\.(jpg|png)$/.test(entry.name)&&!expected.has(entry.name))await rm(join(directory,entry.name));
   }
   for(const source of sources)await copyFile(source,join(directory,basename(source)));
+  await mkdir(join(destination,'assets/fonts'),{recursive:true});
+  for(const source of FONT_FILES)await copyFile(source,join(destination,source));
 }
 
 /** Count all emitted bytes, without relying on IDE compression or exclusion rules. */

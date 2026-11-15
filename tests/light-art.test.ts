@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { campPennant } from '../src/render/art.ts';
+import { displayFont } from '../src/render/typography.ts';
 import type { FactionId } from '../src/core/types.ts';
 
 type Call={op:string;args:unknown[];font:unknown;fill:unknown};
@@ -19,13 +20,14 @@ function pennant(value:number,faction:FactionId|null='P',selected=false,tier?:nu
   return calls;
 }
 
-test('camp pennants keep exact integer text at 16 px, grow in width and preserve drawing state',()=>{
+test('compact camp tallies keep exact integer text at 14 px, grow in width and preserve drawing state',()=>{
   let previous=0;
   for(const value of [0,9,10,99,100,9999,Number.MAX_SAFE_INTEGER])for(const selected of [false,true]){
     const calls=pennant(value,'P',selected),text=calls.filter(c=>c.op==='fillText');
-    assert.equal(text.length,1);assert.equal(text[0]!.font,'600 16px Georgia, "Songti SC", serif');assert.deepEqual(text[0]!.args,[String(value),100,200.5]);
-    const left=calls.find(c=>c.op==='moveTo')!.args as number[],right=calls.find(c=>c.op==='lineTo')!.args as number[],width=right[0]!-left[0]!+10;
-    assert.equal(left[1],189);assert.equal(right[1],189);assert.ok(width>=34);assert.ok(width>=String(value).length*9+14);assert.ok(width>=previous);previous=width;
+    assert.equal(text.length,1);assert.equal(text[0]!.font,'500 14px Georgia, "Songti SC", serif');assert.deepEqual(text[0]!.args,[String(value),100,200.5]);
+    const left=calls.find(c=>c.op==='moveTo')!.args as number[],right=calls.find(c=>c.op==='lineTo')!.args as number[],width=right[0]!-left[0]!+4;
+    assert.equal(left[1],191);assert.equal(right[1],191);assert.ok(width>=26);assert.ok(width>=String(value).length*9+8);assert.ok(width>=previous);previous=width;
+    assert.equal(calls.filter(c=>c.op==='stroke').length,selected?1:0,'only the selected tally has an outline');
   }
 });
 
@@ -42,21 +44,22 @@ test('invalid pennant values do not touch drawing state or silently round troop 
   for(const value of [-1,.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1])assert.deepEqual(pennant(value),[]);
 });
 
-test('level plates stay separate from exact counts and readable for every owner, tier and digit width',()=>{
+test('engraved levels retain their own text space beside exact counts for every owner, tier and digit width',()=>{
   for(const owner of ['P','E1','E2','E3',null] as const)for(const tier of [1,2,3])for(const count of [0,30,9999,Number.MAX_SAFE_INTEGER]){
     const calls=pennant(count,owner,false,tier),text=calls.filter(c=>c.op==='fillText');
     assert.deepEqual(text[0]!.args,[String(count),100,200.5]);
-    assert.equal(text[0]!.font,'600 16px Georgia, "Songti SC", serif');
+    assert.equal(text[0]!.font,'500 14px Georgia, "Songti SC", serif');
     assert.equal(text[1]!.args[0],['一级','二级','三级'][tier-1]);
-    assert.equal(text[1]!.font,'600 11px "Songti SC", "SimSun", serif');
-    assert.ok(Number(text[1]!.args[1])+11<=100-Math.max(34,String(count).length*9+14)/2);
+    assert.equal(text[1]!.font,`400 10px ${displayFont()}`);
+    assert.ok(Number(text[1]!.args[1])+10<=100-Math.max(26,String(count).length*9+8)/2);
   }
 });
 
 
-test('parchment tallies use dark readable ink and a quiet level tag, never a white-on-black badge',()=>{
-  const calls=pennant(30,'P',false,3),text=calls.filter(c=>c.op==='fillText');
-  assert.equal(text[0]!.fill,'#3E382B');assert.equal(text[1]!.fill,'#54432B');
-  assert.ok(calls.some(c=>c.op==='fill'&&c.fill==='#D3D9BE'));
-  assert.ok(!calls.some(c=>['#494238','#53412A','#624418','#286451'].includes(String(c.fill))));
+test('timber tallies keep both precise numbers and engraved levels above 4.5 to 1 contrast for every owner',()=>{
+  const lum=(hex:string)=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i]!,0);
+  for(const owner of ['P','E1','E2','E3',null] as const){
+    const calls=pennant(30,owner,false,3),base=String(calls.find(c=>c.op==='fill')!.fill);
+    for(const text of calls.filter(c=>c.op==='fillText')){const a=lum(String(text.fill)),b=lum(base);assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5);}
+  }
 });

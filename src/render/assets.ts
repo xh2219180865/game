@@ -6,11 +6,14 @@ import { TROOP_MOTION_CROPS, type MotionSpriteId } from './troop-motion-regions.
 export const ART_SOURCES = {
   home:'assets/art/warfront-home.jpg',
   'field-tent':'assets/art/field-tent.jpg',
-  'terrain-plains':'assets/art/warfront-ground.jpg',
-  'terrain-snow':'assets/art/a-terrain-snow.jpg',
-  'terrain-desert':'assets/art/a-terrain-desert.jpg',
-  cards:'assets/art/a-cards.jpg',
-  battlefield:'assets/art/warfront-camps.png',
+  'war-table':'assets/art/war-table.jpg',
+  'drill-yard':'assets/art/drill-yard.jpg',
+  'order-archive':'assets/art/order-archive.jpg',
+  'terrain-plains':'assets/art/battlefield-plains.jpg',
+  'terrain-snow':'assets/art/battlefield-snow.jpg',
+  'terrain-desert':'assets/art/battlefield-desert.jpg',
+  cards:'assets/art/strategy-props.png',
+  battlefield:'assets/art/siege-camps.png',
   sample:'assets/art/warfront-infantry.png',
   motion:'assets/art/warfront-foot.png',
   cavalry:'assets/art/warfront-cavalry.png',
@@ -57,7 +60,7 @@ export const LANDFORM_SPRITE_CROPS={
 export type LandformSpriteId=keyof typeof LANDFORM_SPRITE_CROPS;
 type SourceId=keyof typeof ART_SOURCES;
 type CardKind='mobilize'|'march'|'supply'|'feint'|'farming'|'logistics'|'fortification';
-export type ArtId=SourceId|`card-${CardKind}`|BattleSpriteId|SampleSpriteId|MotionSpriteId|LandformSpriteId;
+export type ArtId=SourceId|`card-${CardKind}`|BattleSpriteId|SampleSpriteId|MotionSpriteId|LandformSpriteId|'silk-texture';
 export type ArtImage=Pick<HTMLImageElement,'src'|'width'|'height'|'onload'|'onerror'>;
 export type ArtImageFactory=()=>ArtImage;
 type SourceState={image:ArtImage|null;loading:Promise<void>|null;failed:boolean};
@@ -118,8 +121,10 @@ export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,
   const sample=Object.prototype.hasOwnProperty.call(SAMPLE_SPRITE_CROPS,id)?SAMPLE_SPRITE_CROPS[id as SampleSpriteId]:undefined;
   const motion=Object.prototype.hasOwnProperty.call(TROOP_MOTION_CROPS,id)?TROOP_MOTION_CROPS[id as MotionSpriteId]:undefined;
   const landform=Object.prototype.hasOwnProperty.call(LANDFORM_SPRITE_CROPS,id)?LANDFORM_SPRITE_CROPS[id as LandformSpriteId]:undefined;
-  const sprite=landform??sample??motion??(Object.prototype.hasOwnProperty.call(BATTLE_SPRITE_CROPS,id)?BATTLE_SPRITE_CROPS[id as BattleSpriteId]:undefined);
-  const crop=sprite?{source:landform?'landforms' as const:sample?'sample' as const:motion?(id.startsWith('motion-cavalry-')?'cavalry' as const:'motion' as const):'battlefield' as const,column:0,row:0,columns:1,rows:1}:region(id);if(!crop)return false;
+  // Reuse the unmarked centre of the silk map; no extra bitmap or baked text.
+  const silk=id==='silk-texture';
+  const sprite=silk?[.16,.25,.60,.43]:landform??sample??motion??(Object.prototype.hasOwnProperty.call(BATTLE_SPRITE_CROPS,id)?BATTLE_SPRITE_CROPS[id as BattleSpriteId]:undefined);
+  const crop=sprite?{source:silk?'war-table' as const:landform?'landforms' as const:sample?'sample' as const:motion?(id.startsWith('motion-cavalry-')?'cavalry' as const:'motion' as const):'battlefield' as const,column:0,row:0,columns:1,rows:1}:region(id);if(!crop)return false;
   const state=states.get(crop.source),image=state?.image;if(!image)return false;
   let sw=image.width/crop.columns,sh=image.height/crop.rows,sx=crop.column*sw,sy=crop.row*sh;
   if(sprite){[sx,sy,sw,sh]=[sprite[0]*image.width,sprite[1]*image.height,sprite[2]*image.width,sprite[3]*image.height];}
@@ -132,11 +137,6 @@ export function drawArt(ctx:CanvasRenderingContext2D,id:ArtId,x:number,y:number,
     x+=(width-w)/2;y+=fit==='bottom'?height-h:(height-h)/2;width=w;height=h;
   }
   // drawImage itself does not change transforms, alpha, clipping, or paint styles.
-  // The first transparent master has the infantry spear tip in the empty lower-left
-  // corner of the neighbouring level-three barracks rectangle. Exclude only that gutter.
-  const clipGutter=id==='camp-barracks-3';
-  if(clipGutter){ctx.save();ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+width,y);ctx.lineTo(x+width,y+height);ctx.lineTo(x+width*.45,y+height);ctx.lineTo(x+width*.45,y+height*.90);ctx.lineTo(x,y+height*.90);ctx.closePath();ctx.clip();}
   try{ctx.drawImage(image as CanvasImageSource,sx,sy,sw,sh,x,y,width,height);return true;}
   catch{state!.image=null;state!.failed=true;artRevision++;return false;}
-  finally{if(clipGutter)ctx.restore();}
 }

@@ -1,9 +1,9 @@
 import type {Battle,Point} from '../core/types.ts';
 
 const COURTS={
-  A01:{edge:'#433C3014',earth:'#8C785F26',center:'#AD9E8187',yard:'#BFA57930',stone:'#B8AE96CC',joint:'#655E4F80',slab:'#C6B58F99',slabEdge:'#75684E80',seam:'#645F4166'},
-  A02:{edge:'#778D8A20',earth:'#AAB7B038',center:'#BAC5C087',yard:'#C5D0C74D',stone:'#CCD7D29C',joint:'#82989060',slab:'#D0DAD370',slabEdge:'#96A79F60',seam:'#E4EBE499'},
-  A03:{edge:'#8F826E20',earth:'#BAAC9338',center:'#C6BDA687',yard:'#D0C1A74D',stone:'#CDBFA29C',joint:'#94897360',slab:'#D3C8B170',slabEdge:'#A2988160',seam:'#9C927B55'},
+  A01:{edge:'#433C3014',earth:'#8C785F26',center:'#756C5640',yard:'#BFA57930',stone:'#8B847555',joint:'#655E4F80',slab:'#A5937340',slabEdge:'#75684E50',seam:'#645F4166'},
+  A02:{edge:'#778D8A20',earth:'#8D9B8826',center:'#7B837340',yard:'#87937B30',stone:'#AAB6B066',joint:'#82989060',slab:'#A7B39F40',slabEdge:'#96A79F50',seam:'#E4EBE470'},
+  A03:{edge:'#8F826E20',earth:'#98866A26',center:'#84745440',yard:'#9D876330',stone:'#A0927266',joint:'#94897360',slab:'#AA977740',slabEdge:'#A2988150',seam:'#9C927B55'},
 } as const;
 
 /** Settled earth and flush stone courts. These marks do not add terrain or rules. */

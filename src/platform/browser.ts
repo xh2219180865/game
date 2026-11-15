@@ -1,3 +1,4 @@
+import { loadBrowserFont } from './fonts.ts';
 import { GameSession } from '../app/session.ts';
 import type { StoragePort } from '../app/storage.ts';
 import { GameView } from '../render/game.ts';
@@ -6,6 +7,7 @@ import { getArtStatus, loadArt, retryArt } from '../render/assets.ts';
 
 function reportArt(){if(getArtStatus().failed)console.warn('部分画面资源未载入，暂用简化画面，可重新载入。');}
 void loadArt(()=>new Image()).then(reportArt);
+void loadBrowserFont();
 
 const canvas=document.querySelector<HTMLCanvasElement>('#game')!;
 const ctx=canvas.getContext('2d');

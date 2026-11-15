@@ -1,6 +1,7 @@
 import type { ActiveCardId, CampType, FactionId, CardId, TroopType, PassiveCardId, Point } from '../core/types.ts';
 import { drawCampArchitecture } from './camp-architecture.ts';
 import { drawArt } from './assets.ts';
+import { displayFont } from './typography.ts';
 
 export const COLORS={paper:'#E9E3D5',ink:'#303832',player:'#286C5C',enemy1:'#B13D36',enemy2:'#C99A32',enemy3:'#5F579C',neutral:'#D8D0C2',surface:'#F4EFE3',muted:'#5F6055'};
 export function factionColor(id:FactionId|null):string{return id==='P'?COLORS.player:id==='E2'?COLORS.enemy2:id==='E3'?COLORS.enemy3:id?COLORS.enemy1:COLORS.neutral;}
@@ -27,10 +28,11 @@ export function flag(ctx:CanvasRenderingContext2D,x:number,y:number,size:number,
   ctx.stroke();ctx.strokeStyle='#655B44';ctx.lineWidth=.15;
   ctx.beginPath();ctx.moveTo(-.85,-1);ctx.lineTo(-.85,1);ctx.stroke();ctx.restore();
 }
-export function departureAccent(ctx:CanvasRenderingContext2D,x:number,y:number,_target:Point,_id:FactionId,age:number):void{
+export function departureAccent(ctx:CanvasRenderingContext2D,x:number,y:number,target:Point,_id:FactionId,age:number):void{
   const progress=Math.max(0,Math.min(1,age/160));
-  ctx.save();ctx.fillStyle=COLORS.muted;ctx.globalAlpha=.35*(1-progress);
-  for(const i of [0,1]){ctx.beginPath();ctx.arc(x-33-i*4-progress*3,y-2+i*6,1.2,0,Math.PI*2);ctx.fill();}
+  const angle=Math.atan2(target.y-y,target.x-x),dx=Math.cos(angle),dy=Math.sin(angle);
+  ctx.save();ctx.fillStyle=COLORS.muted;ctx.globalAlpha*=.35*(1-progress);
+  for(const i of [0,1]){const along=29+i*4+progress*3,across=-2+i*6;ctx.beginPath();ctx.arc(x+dx*along-dy*across,y+dy*along+dx*across,1.2,0,Math.PI*2);ctx.fill();}
   ctx.restore();
 }
 function artFace(ctx:CanvasRenderingContext2D,color:string,points:readonly (readonly [number,number])[]):void{
@@ -153,10 +155,11 @@ export function rankBadge(ctx:CanvasRenderingContext2D,x:number,y:number,size:nu
 }
 
 /** Decorative arrivals consume already settled state; they never create soldiers. */
-export function arrivalAccent(ctx:CanvasRenderingContext2D,x:number,y:number,from:TroopType,to:TroopType,faction:FactionId,ageMs:number):void{
+export function arrivalAccent(ctx:CanvasRenderingContext2D,x:number,y:number,from:TroopType,to:TroopType,faction:FactionId,ageMs:number,origin:Point={x:x-1,y}):void{
   const progress=Math.max(0,Math.min(1,ageMs/160));
+  const angle=Math.atan2(origin.y-y,origin.x-x),radius=42-18*progress;
   ctx.save();ctx.globalAlpha*=1-progress*.45;
-  soldier(ctx,x-42+22*progress,y-6,progress<.5?from:to,faction,.7-.2*progress,0);ctx.restore();
+  soldier(ctx,x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,progress<.5?from:to,faction,.7-.2*progress,0,0,Math.cos(angle)>.1?-1:1);ctx.restore();
 }
 
 /** Short local card feedback; the caller controls lifetime with the game clock. */
@@ -184,25 +187,24 @@ export function cardAccent(ctx:CanvasRenderingContext2D,x:number,y:number,id:Act
   ctx.restore();
 }
 
-/** Warm silk troop tally and a small bronze level tag, with quiet ownership pigments. */
-export const CAMP_COUNT_FONT='600 16px Georgia, "Songti SC", serif';
+/** A quiet narrow tally; count leads, level stays secondary, ownership is a small cloth edge. */
+export const CAMP_COUNT_FONT='500 14px Georgia, "Songti SC", serif';
 export function campPennant(ctx:CanvasRenderingContext2D,x:number,y:number,value:number,id:FactionId|null,selected=false,tier?:number):void{
   if(![x,y,value].every(Number.isFinite)||!Number.isSafeInteger(value)||value<0)return;
   ctx.save();ctx.font=CAMP_COUNT_FONT;ctx.textAlign='center';ctx.textBaseline='middle';
-  const text=String(value),width=Math.max(34,Math.ceil(ctx.measureText(text).width)+14),left=x-width/2;
-  ctx.lineJoin='round';ctx.lineWidth=selected?1.6:.8;ctx.fillStyle=id===null?'#D6D0BF':id==='P'?'#D3D9BE':id==='E2'?'#E2D4AD':id==='E3'?'#D5D0D1':'#DFCBB9';ctx.strokeStyle=selected?'#795333':'#96805A';
-  rounded(ctx,left,y-11,width,22,2);ctx.fill();ctx.stroke();
-  // Thin stained-wood rails and a cloth edge carry faction identity without a saturated block.
-  ctx.fillStyle='#856B46';ctx.fillRect(left+2,y-10,width-4,1);ctx.fillRect(left+2,y+9,width-4,1);
-  ctx.fillStyle=id===null?'#77776B':id==='P'?'#547466':id==='E2'?'#A28745':id==='E3'?'#7D7187':'#A06C54';ctx.fillRect(left+1,y-7,2,14);
-  ctx.fillStyle='#3E382B';ctx.fillText(text,x,y+.5);
-  if(tier===1||tier===2||tier===3){
-    // Fixed companion plate: the authoritative troop count never moves or shrinks.
-    ctx.fillStyle=['#D3C29F','#D2BE92','#CFB785'][tier-1]!;
-    ctx.strokeStyle='#947C53';ctx.lineWidth=.8;
-    rounded(ctx,left-26,y-10,25,20,2);ctx.fill();ctx.stroke();
-    ctx.font='600 11px "Songti SC", "SimSun", serif';ctx.fillStyle='#54432B';
-    ctx.fillText(['一级','二级','三级'][tier-1]!,left-13.5,y+.5);
+  const text=String(value),width=Math.max(26,Math.ceil(ctx.measureText(text).width)+8),left=x-width/2;
+  const hasTier=tier===1||tier===2||tier===3,edge=hasTier?left-22:left,right=left+width;
+  ctx.lineJoin='round';ctx.lineWidth=.8;
+  ctx.fillStyle=id===null?'#393B34':id==='P'?'#303F38':id==='E2'?'#46412E':id==='E3'?'#3E3641':'#47362F';
+  // An unframed dark slip replaces the large bright-edged plaque, inside the old clearance.
+  ctx.beginPath();ctx.moveTo(edge+2,y-9);ctx.lineTo(right-2,y-9);ctx.lineTo(right,y-6);ctx.lineTo(right-1,y+2);ctx.lineTo(right,y+7);ctx.lineTo(right-2,y+9);ctx.lineTo(edge+2,y+8);ctx.lineTo(edge,y+6);ctx.lineTo(edge+1,y-2);ctx.lineTo(edge,y-6);ctx.closePath();ctx.fill();
+  if(selected){ctx.strokeStyle='#AD956A';ctx.stroke();}
+  ctx.fillStyle=id===null?'#80877B':id==='P'?'#7F9E8E':id==='E2'?'#AA955D':id==='E3'?'#9D8BA7':'#AE7A65';ctx.fillRect(edge+5,y+7,10,1);
+  ctx.fillStyle='#E1D7BF';ctx.fillText(text,x,y+.5);
+  if(hasTier){
+    // Explicit Chinese levels remain visible; the original exact-number anchor never moves.
+    ctx.font=`400 10px ${displayFont()}`;ctx.fillStyle='#B8B0A1';
+    ctx.fillText(['一级','二级','三级'][tier-1]!,left-10,y+.5);
   }
   ctx.restore();
 }

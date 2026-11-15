@@ -1,6 +1,6 @@
 # 逐页场景设计预览
 
-以当前首页为参照的独立设计稿，14 个主页面和 S12／S15 两类状态均可浏览。**没有替换正式游戏页面，不是发布包。** 页面数值、奖品、记录时间都是样例，不读写玩家存档，不调用音频或微信，不启用策略储备。
+以当前首页为参照的独立设计稿，14 个主页面和 S12／S15 两类状态均可浏览。**此目录仍是隔离设计预览，不是发布包。** 同源场景和字体的正式接入情况见开发计划。 页面数值、奖品、记录时间都是样例，不读写玩家存档，不调用音频或微信，不启用策略储备。
 
 在仓库根目录运行：
 
@@ -20,7 +20,7 @@ node scripts/page-design.mjs
 - 三张图的完整提示词见 [image-prompts.json](image-prompts.json)，原图非覆盖保存。没有将文字烘焙在场景里。
 - 首页、军帐、三地表、营地、行军图集均复用 assets/art 中现有资源；营地／军士／等级兵数／真实地图调用生产代码的绘制函数。
 - 六项策略器物复用 artifacts/strategy-design-v1/icon-art-direction.png 的既有画片；扩营复用正式三级步营。仅取正式七策对应物件，不启用母图中的储备卡。
-- fonts/ 为 [LXGW WenKai TC](https://github.com/lxgw/LxgwWenKaiTC) 的本地样本；4 个字体文件由 Google Fonts 官方字集接口提供，合计 389,288 字节，OFL.txt 全文、来源和哈希随附。CSS 的 Campaign 为显示别名，字体文件未修改。正式包尚未接入该字体。
+- fonts/ 为 [LXGW WenKai TC](https://github.com/lxgw/LxgwWenKaiTC) 的本地样本；4 个字体文件由 Google Fonts 官方字集接口提供，合计 389,288 字节，OFL.txt 全文、来源和哈希随附。CSS 的 Campaign 为显示别名，字体文件未修改。正式包使用更名、精简的派生字集，见 assets/fonts/README.md。
 
 ## 动效与运行边界
 
@@ -28,4 +28,4 @@ node scripts/page-design.mjs
 
 详细动效时序与正式接入边界见 05 G0.5。设计稿只演示其中可交互的一部分，不用它证明正式游戏所有事件已按新设计实现。镜头、界面材质和字阶可评审；真机安全区、听音、触觉、完整战斗性能与发布包资源预算仍需实施时验证。
 
-预览脚本仅用现有 esbuild 编译 render.ts，输出在 .tmp/first-version/page-design；正式 npm run build 不引用本目录，ART_SOURCES 未增加新图或字体。无需安装新的项目依赖。图片母版和字体样本不计入当前微信包；若将来接入，必须逐项通过原有包体与余量检查。
+预览脚本仅用现有 esbuild 编译 render.ts，输出在 .tmp/first-version/page-design；正式 npm run build 不引用本目录；运行版本在 assets/art 和 assets/fonts 维护，ART_SOURCES／FONT_FILES 按清单打包。无需安装新的项目依赖。本目录母版和字体样本不直接计入微信包，运行派生资源经过原有包体与余量检查。

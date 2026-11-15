@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { drawStrategyIllustration } from '../src/render/strategy-illustration.ts';
-import { building, soldier } from '../src/render/art.ts';
 import { loadArt, ART_SOURCES, type ArtImage } from '../src/render/assets.ts';
 import type { CardId } from '../src/core/types.ts';
 
@@ -27,19 +26,13 @@ async function loaded(){
 const ids=['mobilize','march','supply','feint','farming','logistics','fortification'] as const;
 const crops=(d:ReturnType<typeof canvas>)=>d.calls.filter(c=>c.op==='drawImage').map(c=>[(c.args[0] as ArtImage).src,...c.args.slice(1,5)]);
 
-test('all seven cards draw the same camp or troop crops as the battlefield, never the old card characters',async()=>{
-  await loaded();
-  for(const id of ids){
-    const d=canvas(),reference=canvas();drawStrategyIllustration(d.ctx,10,20,70,34,id);d.balanced();
-    if(id==='mobilize')soldier(reference.ctx,0,0,'infantry','P');
-    else if(id==='march')soldier(reference.ctx,0,0,'infantry','P',1,0,0,1,2);
-    else if(id==='supply'){soldier(reference.ctx,0,0,'infantry','P');soldier(reference.ctx,0,0,'infantry','P');soldier(reference.ctx,0,0,'infantry','P');}
-    else if(id==='logistics')soldier(reference.ctx,0,0,'cavalry','P',1,0,0,1,2);
-    else if(id!=='farming')building(reference.ctx,0,0,28,'barracks',id==='fortification'?3:1,id==='feint'?'E1':'P');
-    assert.deepEqual(crops(d),crops(reference),id);
-    assert.ok(crops(d).every(c=>c[0]!==ART_SOURCES.cards));
-    assert.ok(!d.calls.some(c=>c.op==='fillText'),'the caller retains inventory and labels');
+test('ready strategy artwork uses one distinct painted object crop for each of the seven cards',async()=>{
+  await loaded();const windows=new Set<string>();
+  for(const id of ids){const d=canvas();drawStrategyIllustration(d.ctx,0,0,70,34,id);d.balanced();const images=crops(d);
+    assert.equal(images.length,1);assert.equal(images[0]![0],ART_SOURCES.cards);windows.add(JSON.stringify(images[0]));
+    assert.ok(!d.calls.some(c=>c.op==='fillText'),'names and exact stock remain caller-owned');
   }
+  assert.equal(windows.size,7,'no strategy borrows another strategy illustration');
 });
 
 test('small and album illustrations are clipped, static and restore caller Canvas state',async()=>{
@@ -49,7 +42,7 @@ test('small and album illustrations are clipped, static and restore caller Canva
     assert.deepEqual(a.calls,b.calls,'no time, random pose or mutable presentation state');
     assert.deepEqual(a.calls.find(c=>c.op==='rect')?.args,[9,17,w,h]);
     assert.ok(a.calls.some(c=>c.op==='clip'));
-    assert.equal(crops(a).length,id==='farming'?0:id==='supply'?3:1,'all sizes keep only the intended close subject, without extra background camps');
+    assert.equal(crops(a).length,1,'all sizes keep only the intended close subject, without extra background camps');
     for(const c of a.calls)for(const arg of c.args)if(typeof arg==='number')assert.ok(Number.isFinite(arg));
   }
 });
@@ -58,8 +51,7 @@ test('lost camp and troop textures keep seven distinct Canvas vignettes with no 
   const shapes=new Set<string>();
   for(const id of ids){
     await loaded();const fail=canvas(true);drawStrategyIllustration(fail.ctx,0,0,70,34,id);fail.balanced();
-    if(id==='farming')assert.equal(crops(fail).length,0,'grain props use Canvas without an image');
-    else assert.ok(crops(fail).length>0);
+    assert.ok(crops(fail).length>0,'the missing painted prop invokes the Canvas fallback');
     const fallback=canvas();drawStrategyIllustration(fallback.ctx,0,0,70,34,id);fallback.balanced();
     assert.equal(crops(fallback).length,0);assert.ok(fallback.calls.some(c=>c.op==='fill'));
     shapes.add(JSON.stringify(fallback.calls));

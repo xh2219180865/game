@@ -57,7 +57,9 @@ function scan(h:Harness){
   const ids=new Set<string>(),texts=new Set<string>();h.v.wheel(-100000);h.draw();
   for(let i=0;i<80;i++){
     for(const r of h.v.regions){assert.ok(r.y>=h.v.viewport.top&&r.y+r.h<=h.v.viewport.height-h.v.viewport.bottom,`${r.id} outside viewport`);assert.ok(r.x>=0&&r.x+r.w<=h.v.viewport.width);if(r.h>=44)ids.add(r.id);}
-    for(const mark of h.d.texts)if(mark.visible&&mark.y>=16&&mark.y<=h.v.viewport.height-12)texts.add(mark.text);
+    // Fixed choice controls are not part of the scrolling effect paragraph.
+    const contentTop=h.s.page==='choice'?h.v.viewport.top+99:16,contentBottom=h.s.page==='choice'?h.v.viewport.height-h.v.viewport.bottom-137:h.v.viewport.height-12;
+    for(const mark of h.d.texts)if(mark.visible&&mark.y>=contentTop&&mark.y<=contentBottom)texts.add(mark.text);
     const view=h.v as unknown as {scroll:number;detailScroll:number;librarySelection:CardId|null},before=view.librarySelection?view.detailScroll:view.scroll;h.v.wheel(64);h.draw();if((view.librarySelection?view.detailScroll:view.scroll)===before)break;
   }
   return {ids,text:[...texts].join('')};
@@ -90,7 +92,7 @@ for(const [width,height]of SIZES)for(const maximum of [false,true])test(`painted
   for(const id of CARD_IDS)assert.ok(seen.ids.has(`library-${id}`),`unreachable card ${id}`);
   assert.ok(!/持有|累计|已解锁 \d/.test(seen.text),'the catalogue does not expose personal holdings');
   if(maximum){assert.ok(!seen.text.includes('999+'));assert.ok(!seen.text.includes(String(Number.MAX_SAFE_INTEGER)),'personal counts belong to preparation, not the catalogue');}
-  assert.ok(!h.d.images.includes(ART_SOURCES.cards),'the catalogue uses compact ink seals');
+  assert.ok(h.d.images.includes(ART_SOURCES.cards),'the catalogue uses painted military objects');
   for(const id of CARD_IDS){
     const r=find(h,`library-${id}`),staleOther=h.v.regions.find(r=>r.id.startsWith('library-')&&r.id!==`library-${id}`);
     assert.equal(r.label,`查看${CARDS[id].name}，已解锁`);
@@ -168,7 +170,7 @@ for(const [width,height]of SIZES)for(const count of [0,1,2,3])test(`painted choi
   assert.equal(getArtStatus().ready,ART_COUNT);
   const regions=h.v.regions.filter(r=>r.id.startsWith('choice-'));
   assert.deepEqual(regions.map(r=>r.id),candidates.map(id=>`choice-${id}`),'never invent candidates');
-  if(count){assert.ok(h.d.images.includes(ART_SOURCES.sample));assert.ok(!h.d.images.includes(ART_SOURCES.cards));assert.equal(new Set(regions.map(r=>r.y)).size,1,'candidates appear together rather than a vertical fallback list');}
+  if(count){assert.ok(h.d.images.includes(ART_SOURCES.cards));assert.equal(new Set(regions.map(r=>r.y)).size,1,'candidates appear together rather than a vertical fallback list');}
   for(const r of regions){assert.ok(r.w>=44&&r.h>=44);assert.ok(r.x>=20-1e-9&&r.x+r.w<=width-20+1e-9);assert.ok(r.y>=h.v.viewport.top&&r.y+r.h<=height-h.v.viewport.bottom-137);}
   for(let i=1;i<regions.length;i++)assert.ok(regions[i-1]!.x+regions[i-1]!.w<regions[i]!.x,'cards do not overlap');
   tap(h,'claim');await idle();assert.deepEqual(claims,[],'unselected or empty choices cannot claim');unchanged(h,before);

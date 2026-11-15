@@ -1,3 +1,4 @@
+import { FONT_FILES } from '../src/render/typography.ts';
 import { build } from 'esbuild';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -16,8 +17,8 @@ await writeFile(`${root}/acceptance.html`,'<!doctype html><html lang="zh-CN"><me
 await writeFile(`${root}/benchmark.html`,'<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>谋定山河 · 浏览器渲染基准</title><style>body{margin:16px;background:#253b45;color:white;font:14px system-ui;display:flex;gap:24px}canvas{width:375px;height:812px;flex-shrink:0}aside{max-width:650px}button{font:16px system-ui;padding:12px}pre{white-space:pre-wrap;font-size:12px}</style><canvas aria-label="渲染基准画布"></canvas><aside><h1>连续 20 局渲染与资源检查</h1><p>自动操作，每帧推进 250 游戏毫秒，三图轮流。仅内存数据；音频节点静音输出。记录实际浏览器帧间隔与绘制耗时，不代表正常速度手机性能或玩家平衡测试。</p><button>开始 20 局检查</button><p id="status" role="status">尚未开始</p><pre id="report"></pre></aside><script type="module" src="/benchmark.js"></script></html>');
 const server=createServer(async(req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;
-  if(Object.values(ART_SOURCES).some(file=>path==='/'+file)){
-    try{const body=await readFile(path.slice(1));res.writeHead(200,{'Content-Type':path.endsWith('.png')?'image/png':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end();}return;
+  if([...Object.values(ART_SOURCES),...FONT_FILES].some(file=>path==='/'+file)){
+    try{const body=await readFile(path.slice(1));res.writeHead(200,{'Content-Type':path.endsWith('.png')?'image/png':path.endsWith('.ttf')?'font/ttf':path.endsWith('.txt')?'text/plain':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end();}return;
   }
   const routes={'/':'index.html','/game.js':'game.js','/acceptance':'acceptance.html','/acceptance.js':'acceptance.js','/benchmark':'benchmark.html','/benchmark.js':'benchmark.js','/transport':'transport.html','/transport.js':'transport.js','/strategy-trial':'strategy-trial.html','/strategy-trial.js':'strategy-trial.js'};
   const filename=routes[path];if(!filename){res.writeHead(404);res.end();return;}

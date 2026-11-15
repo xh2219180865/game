@@ -1,5 +1,6 @@
 import type { CardId } from '../core/types.ts';
 import { building, soldier } from './art.ts';
+import { drawArt } from './assets.ts';
 
 type Palette={dark:string;shade:string;mid:string;light:string;edge:string;fire:string;ember:string};
 const COLOR:Palette={dark:'#514738',shade:'#79593E',mid:'#AE8251',light:'#DCC698',edge:'#EEE0B9',fire:'#B95435',ember:'#EBC275'};
@@ -85,6 +86,8 @@ export function drawStrategyIllustration(ctx:CanvasRenderingContext2D,x:number,y
   if(![x,y,w,h,x+w,y+h].every(Number.isFinite)||w<=0||h<=0||!['mobilize','march','supply','feint','farming','logistics','fortification'].includes(id))return;
   const field=h<=48&&w/h>1.4,k=Math.min(w*(field?.7:.94)/48,h*.94/40),p=muted?GRAY:COLOR;
   ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.translate(x+w*(field?.36:.5),y+h*.5);ctx.scale(k,k);ctx.setLineDash([]);
+  // All seven full-colour subjects share the homepage's painted materials; names and stock remain live text.
+  if(!muted&&drawArt(ctx,`card-${id}`,-23,-20,46,40,'contain')){ctx.restore();return;}
   ctx.lineCap='round';ctx.lineJoin='round';ctx.fillStyle=muted?'#77777725':'#82796925';ctx.beginPath();ctx.ellipse(0,14,21,4,0,0,Math.PI*2);ctx.fill();
   const troop=(x:number,y:number,s:number,cavalry=false,walking=false)=>muted?grayTroop(ctx,x,y,s,cavalry,walking):soldier(ctx,x,y,cavalry?'cavalry':'infantry','P',s,0,0,1,walking?2:0);
   const camp=(x:number,y:number,s:number,tier:number)=>muted?grayCamp(ctx,x,y,s,tier):building(ctx,x,y,s,'barracks',tier,id==='feint'?'E1':'P');

@@ -1,3 +1,4 @@
+import {loadBrowserFont} from '../src/platform/fonts.ts';
 import { GameSession } from '../src/app/session.ts';
 import type { Page } from '../src/app/session.ts';
 import { GameView } from '../src/render/game.ts';
@@ -12,6 +13,7 @@ import { loadArt } from '../src/render/assets.ts';
 import { infantryWalkFrame, infantryDistanceFrame } from '../src/render/sample-sprite-regions.ts';
 
 await loadArt(()=>new Image());
+await loadBrowserFont();
 
 const canvas=document.querySelector<HTMLCanvasElement>('canvas')!,ctx=canvas.getContext('2d')!,now=Date.now(),params=new URLSearchParams(location.search),scene=params.get('scene');
 if(params.get('grayscale')==='true')canvas.style.filter='grayscale(1)';
@@ -41,6 +43,11 @@ if(scene==='formal-ground'){
   const map=params.get('map');b=createBattle(map==='A02'||map==='A03'?map:'A01',{id:'ground-only',firstDragCompleted:true});
 }
 if(scene==='persistent-status'){b=createStatePressure().battle;advanceBattle(b,3000);}
+if(scene==='upgrade'){
+  b=createBattle('A01',{id:'upgrade-fixture',firstDragCompleted:true});const camp=b.camps.find(c=>c.id==='A01-P1')!;
+  if(params.get('tier')==='3'){camp.tier=2;camp.garrison=70;}else camp.garrison=30;
+  const result=applyBattleAction(b,{kind:'upgrade',faction:'P',sequence:1,targetId:camp.id});if(!result.ok)throw new Error(result.reason);feedback.push(...result.events);
+}
 if(scene==='clash'){
   b=createBattle('A01',{id:'clash-fixture',firstDragCompleted:true});const target=b.camps.find(c=>c.id==='A01-N4')!;target.owner='E1';target.garrison=40;
   const result=applyBattleAction(b,{kind:'dispatch',faction:'P',sequence:1,sourceId:'A01-P1',targetId:target.id});if(!result.ok)throw new Error(result.reason);const at=b.armies[0]!.arrivalAtMs;advanceBattle(b,at-1);feedback.push(...advanceBattle(b,at));
@@ -93,7 +100,7 @@ p.latestResult={matchId:'visual-result',mapId:'A01',modeId:'arena-four',settledA
   result:{reason:'deadline',playerRank:1,independentWinner:'P',ranks:{P:1,E1:2,E2:3,E3:4},stats:[{faction:'P',camps:4,troops:163,rank:1},{faction:'E1',camps:2,troops:90,rank:2},{faction:'E2',camps:1,troops:54,rank:3},{faction:'E3',camps:0,troops:0,rank:4}],atMs:240000}};
 session.profile=p;
 if(scene==='lesson-upgrade')session.temporary=p.activeMatch;
-const allowed:Page[]=['home','battle','pause','result','lessons','prepare','choice','library','ranks','settings','about','leaderboard','recovery'];
+const allowed:Page[]=['loading','home','battle','pause','result','lessons','prepare','choice','library','ranks','settings','about','leaderboard','recovery'];
 const requested=new URLSearchParams(location.search).get('screen') as Page;session.page=allowed.includes(requested)?requested:'choice';session.returnPage='home';
 if(session.page==='prepare')p.activeMatch=null;
 if(settingsPreview){
@@ -119,7 +126,7 @@ canvas.addEventListener('pointercancel',e=>view.cancel(e.pointerId));
 canvas.addEventListener('wheel',e=>{e.preventDefault();view.wheel(e.deltaY);},{passive:false});
 window.addEventListener('resize',resize);resize();
 if(scene==='retreat'){view.events(advanceBattle(b,retreatAt));const at=Number(params.get('at'));view.events(advanceBattle(b,retreatAt+(params.has('at')&&[0,80,159,160].includes(at)?at:80)));}
-if(feedback.length){view.events(feedback);const at=Number(params.get('at'));view.events(advanceBattle(b,b.gameMs+(params.has('at')&&[0,80,159,160,219,220,300,400,449,450,549,550,799,800].includes(at)?at:scene==='march'?400:80)));}
+if(feedback.length){view.events(feedback);const at=Number(params.get('at'));view.events(advanceBattle(b,b.gameMs+(params.has('at')&&[0,80,120,159,160,180,219,220,279,280,300,400,449,450,549,550,799,800].includes(at)?at:scene==='march'?400:80)));}
 function identitySheet(){
   const {width:w,height:h}=view.viewport;
   ctx.fillStyle=COLORS.paper;ctx.fillRect(0,0,w,h);ctx.fillStyle=COLORS.ink;ctx.textAlign='center';ctx.font='600 18px sans-serif';ctx.fillText('阵营配色与四类三级营地',w/2,28);

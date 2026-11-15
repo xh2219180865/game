@@ -50,14 +50,13 @@ test('three surface palettes remain stable and restore Canvas state without labe
   assert.notDeepEqual(palettes[0],palettes[1]);assert.notDeepEqual(palettes[1],palettes[2]);
 });
 
-test('successful terrain images still receive the same scenery as the fallback, with routes respected',async()=>{
+test('loaded terrain supplies its painted framing while missing images retain route-safe scenery',async()=>{
   const routes=[{from:{x:10,y:0},to:{x:10,y:540}}],fallback=probe();drawTerrain(fallback.ctx,375,540,[],'A02',routes);
   await loadArt(()=>{const image={width:1024,height:1536,onload:null,onerror:null} as unknown as ArtImage;Object.defineProperty(image,'src',{set(){queueMicrotask(()=>image.onload?.(new Event('load')));}});return image;});
   const ready=probe();drawTerrain(ready.ctx,375,540,[],'A02',routes);ready.check();fallback.check();
   assert.equal(ready.calls.filter(c=>c.op==='drawImage').length,1);
   const positions=(p:ReturnType<typeof probe>)=>p.calls.filter(c=>c.op==='translate');
-  assert.ok(positions(ready).length>=2);assert.deepEqual(positions(ready),positions(fallback));
-  assert.ok(ready.calls.findIndex(c=>c.op==='translate')>ready.calls.findIndex(c=>c.op==='drawImage'),'scenery is above the loaded ground image');
+  assert.ok(positions(fallback).length>=2);assert.equal(positions(ready).length,0,'do not add flat pine and water stickers over the painted landscape');
 });
 
  test('river bays continue off both screen edges and pine roots have no solid ellipse shadow',()=>{

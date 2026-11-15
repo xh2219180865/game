@@ -51,7 +51,7 @@ test('formal maps use separate worn stone palettes that match the courtyard, sno
     const d=drawing();drawSampleGround(d.ctx,createBattle(id,{id:'palette'}),p=>p,1);
     return new Set(d.colors);
   });
-  const centerColors=['#B8AE96CC','#CCD7D29C','#CDBFA29C'];
+  const centerColors=['#8B847555','#AAB6B066','#A0927266'];
   for(let i=0;i<palettes.length;i++){
     assert.ok(palettes[i]!.has(centerColors[i]!));
     for(let j=0;j<palettes.length;j++)if(i!==j)assert.ok(!palettes[j]!.has(centerColors[i]!));
@@ -75,7 +75,7 @@ test('all tutorial maps retain their existing ground',()=>{
 
 test('resized camp art keeps feet anchored, readable tier heights and valid size boundaries',async()=>{
   await loadArt(()=>{
-    const image={width:1536,height:1024,onload:null,onerror:null} as unknown as ArtImage;let src='';
+    const image={width:768,height:768,onload:null,onerror:null} as unknown as ArtImage;let src='';
     Object.defineProperty(image,'src',{get(){return src;},set(value:string){src=value;queueMicrotask(()=>image.onload?.(new Event('load')));}});return image;
   });
   for(const size of [14,28,42]){
@@ -89,7 +89,7 @@ test('resized camp art keeps feet anchored, readable tier heights and valid size
       assert.ok(w!<=66+1e-8&&h!<=56+1e-8);heights.push(h!);
     }
     assert.ok(heights[0]!>=20,'the intentionally smaller first tier retains its painted timber silhouette');
-    assert.ok(heights[1]!>heights[0]!+6&&heights[2]!>heights[1]!+6,'court and towers have visibly distinct heights');
+    assert.ok(heights[1]!>heights[0]!+5&&heights[2]!>heights[1]!+5,'court and towers retain increasing heights at the actual square atlas aspect');
   }
   for(const [x,y,size]of [[NaN,10,28],[10,Infinity,28],[10,10,0],[10,10,-1],[10,10,NaN]]){
     const d=drawing();building(d.ctx,x!,y!,size!,'barracks',1,'P');assert.equal(d.calls.length,0);

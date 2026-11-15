@@ -1,0 +1,42 @@
+{
+  "battlefield-plains.jpg": {
+    "bytes": 87881,
+    "sha256": "521ae1791a3910b7569d48cb452320dce0b322b5d4f314ca3af8b12ae2b67708",
+    "dimensions": [
+      589,
+      887
+    ]
+  },
+  "battlefield-desert.jpg": {
+    "bytes": 85383,
+    "sha256": "2756dc5e3a624ce2fd70b091a2a49aeb6162a72d26609e32e91bb75983c44be8",
+    "dimensions": [
+      589,
+      887
+    ]
+  },
+  "battlefield-snow.jpg": {
+    "bytes": 94296,
+    "sha256": "c4c40932bd4b2f1dbcaf8a3b592286752690f6e1165ff6fc4a9ee71959365b84",
+    "dimensions": [
+      590,
+      887
+    ]
+  },
+  "siege-camps.png": {
+    "bytes": 888533,
+    "sha256": "036090de53b69a1ce9b001f1d2a6d622abd6e52d8b08e58f2143233a9c6141e0",
+    "dimensions": [
+      768,
+      768
+    ]
+  },
+  "strategy-props.png": {
+    "bytes": 308559,
+    "sha256": "f47d2524afc31d7818db3a6e3e291a7b8b7791283afe203c6e1547c33c5503f9",
+    "dimensions": [
+      640,
+      320
+    ]
+  }
+}

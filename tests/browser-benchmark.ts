@@ -1,3 +1,4 @@
+import {loadBrowserFont} from '../src/platform/fonts.ts';
 import { GameSession } from '../src/app/session.ts';
 import { GameView } from '../src/render/game.ts';
 import { GameAudio } from '../src/platform/audio.ts';
@@ -11,6 +12,7 @@ import { runBrowserAudioAudit } from './browser-audio.ts';
 import { loadArt } from '../src/render/assets.ts';
 
 await loadArt(()=>new Image());
+await loadBrowserFont();
 
 const canvas=document.querySelector<HTMLCanvasElement>('canvas')!,ctx=canvas.getContext('2d')!;
 const testWidth=Number(new URLSearchParams(location.search).get('width'));

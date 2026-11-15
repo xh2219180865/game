@@ -31,9 +31,9 @@ export function drawRankStandard(ctx:CanvasRenderingContext2D,x:number,y:number,
   face(ctx,GOLD,[[-.305,-.36],[-.282,-.36],[-.282,-.312],[-.305,-.312]]);
   face(ctx,GOLD,[[.282,-.36],[.305,-.36],[.305,-.312],[.282,-.312]]);
   face(ctx,INK,[[-.24,-.338],[.24,-.338],[.24,.282],[0,.403],[-.24,.282]]);
-  face(ctx,JADE,[[-.222,-.322],[.222,-.322],[.222,.271],[0,.379],[-.222,.271]]);
-  face(ctx,'#81917D',[[-.213,-.32],[-.08,-.32],[-.105,.314],[-.213,.266]]);
-  face(ctx,'#53685D',[[.09,-.32],[.215,-.32],[.215,.268],[.115,.318]]);
+  face(ctx,'#71362B',[[-.222,-.322],[.222,-.322],[.222,.271],[0,.379],[-.222,.271]]);
+  face(ctx,'#92503B',[[-.213,-.32],[-.08,-.32],[-.105,.314],[-.213,.266]]);
+  face(ctx,'#4F2A23',[[.09,-.32],[.215,-.32],[.215,.268],[.115,.318]]);
   line(ctx,GOLD,.006,[[-.20,-.299],[.20,-.299],[.20,.258],[0,.354],[-.20,.258],[-.20,-.299]]);
   for(const side of [-1,1]){
     line(ctx,GOLD,.011,[[side*.26,-.326],[side*.266,.236]]);
@@ -42,7 +42,7 @@ export function drawRankStandard(ctx:CanvasRenderingContext2D,x:number,y:number,
     line(ctx,GOLD,.006,[[side*.183,-.267],[side*.164,-.284],[side*.15,-.267]]);
     line(ctx,GOLD,.006,[[side*.183,.215],[side*.17,.236],[side*.148,.239]]);
   }
-  ctx.save();ctx.translate(0,.015);gate(ctx);ctx.restore();ctx.restore();
+  ctx.restore();
 }
 
 /** Pale decoration is confined to the bottom fifth, leaving the reading area quiet. */

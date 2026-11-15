@@ -28,12 +28,12 @@ async function loaded(){
 }
 const ids=['mobilize','march','supply','feint'] as const;
 
-test('field cards use battlefield sprites without painting inventory or names',async()=>{
+test('field cards use the painted strategy objects without painting inventory or names',async()=>{
   await loaded();
   for(const id of ids)for(const w of [60,70,83.75,97.5]){
     const d=canvas();drawOrderCard(d.ctx,10,20,w,54,id,false,false,true);d.balanced();
-    const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,id==='supply'?3:1);
-    assert.ok(images.every(c=>(c.args[0] as ArtImage).src===(id==='feint'?'assets/art/warfront-camps.png':'assets/art/warfront-infantry.png')));
+    const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,1);
+    assert.ok(images.every(c=>(c.args[0] as ArtImage).src==='assets/art/strategy-props.png'));
     assert.ok(d.calls.some(c=>c.op==='rect'&&JSON.stringify(c.args)===JSON.stringify([14,38,w-8,32])),'illustration is clipped below the name slip');
     assert.ok(d.calls.some(c=>c.op==='clip'));
     assert.ok(d.calls.some(c=>c.op==='fillRect'&&c.args[1]===24&&c.args[3]===14),'reserves the upper name slip');

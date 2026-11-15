@@ -20,19 +20,22 @@ for(const id of Object.keys(MAPS) as (keyof typeof MAPS)[])test(`${id}: every re
   const b=createBattle(id,{id:'roads-art',firstDragCompleted:true}),before=JSON.stringify(b);
   for(const scale of [.6,1,1.15]){
     const d=drawing(),point=(p:{x:number;y:number})=>({x:p.x*scale,y:p.y*scale});drawRoads(d.ctx,b,point,null,scale);d.balanced();
-    assert.equal(d.fills.length,MAPS[id].roads.length*3,'each authoritative road has soil edge, compacted earth and worn centre');
+    assert.equal(d.fills.length,MAPS[id].roads.length*4,'each authoritative road has three translucent ground layers and one batch of wear marks');
     for(let i=0;i<MAPS[id].roads.length;i++){
       const [a,z]=MAPS[id].roads[i]!,from=point(b.camps.find(c=>c.id===a)!),to=point(b.camps.find(c=>c.id===z)!);
       const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);
-      for(const layer of d.fills.slice(i*3,i*3+3)){
-        assert.ok(layer.path.length>=10,'natural edges cannot be a four-corner diagram bar');
+      for(const [index,layer]of d.fills.slice(i*4,i*4+4).entries()){
+        if(index<3)assert.ok(layer.path.length>=10,'natural edges cannot be a four-corner diagram bar');
+        else assert.ok(layer.path.length>=8&&layer.path.length<=16,'wear remains a bounded batch of two to four ground patches');
+        assert.match(String(layer.color),/^#[0-9A-F]{8}$/i,'soil layers expose the terrain beneath them');
+        assert.ok(parseInt(String(layer.color).slice(7),16)<255,'no opaque ribbon covers the ground texture');
         const widths=new Set<number>();
         for(const [x,y]of layer.path){
           const along=((x!-from.x)*dx+(y!-from.y)*dy)/length,across=((x!-from.x)*-dy+(y!-from.y)*dx)/length;
           assert.ok(along>=15&&along<=length-15,'roads stop inside their own camp approach');
-          assert.ok(Math.abs(across)<=7*scale+1e-8,'soil detail stays around the real straight army route');widths.add(Math.round(Math.abs(across)*100));
+          assert.ok(Math.abs(across)<=8*scale+1e-8,'soil detail stays within the new 16px shoulder around the real straight army route');widths.add(Math.round(Math.abs(across)*100));
         }
-        assert.ok(widths.size>3,'road edges vary without diverting the army centreline');
+        if(index<3)assert.ok(widths.size>3,'road edges vary without diverting the army centreline');
       }
     }
     assert.equal(JSON.stringify(b),before);assert.ok(!d.calls.includes('fillText')&&!d.calls.includes('drawImage'));

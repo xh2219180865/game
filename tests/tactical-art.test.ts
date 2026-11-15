@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createBattle } from '../src/core/battle.ts';
 import { MAPS, neighbors } from '../src/core/maps.ts';
 import { drawRoads, marchTrail, roadSegment, shotAccent, tacticalAccent, tacticalDuration } from '../src/render/tactical-art.ts';
+import { arrivalAccent, departureAccent } from '../src/render/art.ts';
 
 type Call={op:string;args:unknown[];style:Record<string,unknown>};
 function drawing(){
@@ -25,7 +26,7 @@ test('roads expose only the selected real exits, stay under cities and leave leg
     const b=createBattle(id,{id:'roads',firstDragCompleted:true}),before=JSON.stringify(b),source=b.camps.find(c=>c.owner==='P')!;
     const d=drawing();drawRoads(d.ctx,b,p=>({x:p.x*scale,y:p.y*scale}),source.id,scale);d.balanced();
     assert.equal(d.calls.filter(c=>c.op==='stroke'&&c.style.lineWidth===3&&c.style.strokeStyle==='#6D6654').length,neighbors(b,source.id).length);
-    assert.equal(d.calls.filter(c=>c.op==='fill'&&['#67543848','#71807845','#7B654343'].includes(String(c.style.fillStyle))).length,MAPS[id].roads.length,'one irregular soil envelope for each real route');
+    assert.equal(d.calls.filter(c=>c.op==='fill'&&['#8A775A22','#8C938A25','#9D845A2B'].includes(String(c.style.fillStyle))).length,MAPS[id].roads.length,'one translucent soil envelope for each real route');
     for(const [a,z]of MAPS[id].roads){
       const from=b.camps.find(c=>c.id===a)!,to=b.camps.find(c=>c.id===z)!;
       const segment=roadSegment(from,to,28)!;
@@ -73,4 +74,55 @@ test('projectiles remain short, legible and bounded on both axes, with static re
       assert.ok(Math.hypot(z[0]!-a[0]!,z[1]!-a[1]!)<=24+1e-8,'arrows cannot become full-route beams');
     }
   }
+});
+
+test('departure dust follows all four real exits rather than appearing on a fixed side',()=>{
+  const p={x:120,y:220};
+  for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]]){
+    const d=drawing();departureAccent(d.ctx,p.x,p.y,{x:p.x+dx!*100,y:p.y+dy!*100},'P',40);d.balanced();
+    const dust=d.calls.filter(c=>c.op==='arc');assert.equal(dust.length,2);
+    for(const c of dust){const [x,y]=c.args as number[];assert.ok((x!-p.x)*dx!+(y!-p.y)*dy!>18,'dust stays on the actual departure side');}
+  }
+});
+
+test('reinforcements converge from the real source direction before joining the target camp',()=>{
+  const p={x:120,y:220};
+  for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]]){
+    const projections:number[]=[];
+    for(const age of [0,80,150]){
+      const d=drawing();arrivalAccent(d.ctx,p.x,p.y,'cavalry','archer','P',age,{x:p.x+dx!*100,y:p.y+dy!*100});d.balanced();
+      const [x,y]=d.calls.find(c=>c.op==='translate')!.args as number[];
+      projections.push((x!-p.x)*dx!+(y!-p.y)*dy!);
+    }
+    assert.ok(projections[0]!>projections[1]!&&projections[1]!>projections[2]!&&projections[2]!>=18,'the figure approaches on the arrival side without crossing the camp');
+  }
+});
+
+test('melee sparks only flash during contact, not approach or withdrawal',()=>{
+  for(const age of [0,80,120,180,279,280,400,549]){
+    const d=drawing();tacticalAccent(d.ctx,'arrival',{x:120,y:220},{x:50,y:330},'P',age,false,false);d.balanced();
+    const sparks=d.calls.filter(c=>c.op==='stroke'&&c.style.strokeStyle==='#DFAB4E');
+    assert.equal(sparks.length,age>=120&&age<280?3:0,`contact at ${age} ms`);
+  }
+});
+
+test('hastened marches retain two direction marks with no animated dust in reduced or crowded scenes',()=>{
+  for(const reduced of [false,true])for(const crowded of [false,true]){
+    const draw=(hastened:boolean)=>{const d=drawing();marchTrail(d.ctx,{x:180,y:300},1.7,'E2',1300,reduced,crowded,hastened);d.balanced();return d.calls;};
+    const ordinary=draw(false),hastened=draw(true);
+    assert.equal(ordinary.filter(c=>c.op==='moveTo').length,1);
+    assert.equal(hastened.filter(c=>c.op==='moveTo').length,2);
+    assert.equal(hastened.filter(c=>c.op==='ellipse').length,reduced||crowded?0:3);
+    assert.deepEqual(hastened.filter(c=>['translate','rotate','fillText'].includes(c.op)),ordinary.filter(c=>['translate','rotate','fillText'].includes(c.op)),'speed marker cannot move the army anchor or invent a count');
+  }
+});
+
+test('local battle accents respect the enclosing scene opacity',()=>{
+  const draws=[
+    (d:ReturnType<typeof drawing>)=>departureAccent(d.ctx,120,220,{x:220,y:220},'P',40),
+    (d:ReturnType<typeof drawing>)=>tacticalAccent(d.ctx,'capture',{x:120,y:220},null,'P',80,false,false),
+    (d:ReturnType<typeof drawing>)=>tacticalAccent(d.ctx,'arrival',{x:120,y:220},{x:50,y:220},'P',180,true,false),
+    (d:ReturnType<typeof drawing>)=>shotAccent(d.ctx,{x:120,y:220},{x:160,y:220},'P',80,true,false,false),
+  ];
+  for(const draw of draws){const d=drawing();draw(d);d.balanced();for(const c of d.calls.filter(c=>['fill','stroke'].includes(c.op)))assert.ok(Number(c.style.globalAlpha)<=.8,'effects cannot brighten a fading or dimmed scene');}
 });

@@ -91,7 +91,9 @@ for(const [width,height]of SIZES){
 
   test(`quick preparation ${width}: direct card detail returns in one step to the same scroll, while library detail stays in its library`,async()=>{
     const {session,view,find,snapshot}=await harness(width,height);
-    session.page='prepare';view.draw(0);find('prepare-rules').run();view.draw(1);
+    session.page='prepare';view.draw(0);
+    for(let i=0;i<80&&!view.regions.some(r=>r.id==='prepare-rules');i++){view.wheel(10);view.draw(i+1);}
+    find('prepare-rules').run();view.draw(1);
     view.wheel(10000);view.draw(2);
     const before=snapshot(),geometry=()=>view.regions.map(({id,x,y,w,h})=>({id,x,y,w,h}));
     const prepared=geometry();
@@ -111,3 +113,12 @@ for(const [width,height]of SIZES){
     assert.deepEqual(snapshot(),before);assert.equal(session.match,null);
   });
 }
+
+
+test('expired pause: the top exit returns home and preserves the saved battle instead of offering continue',async()=>{
+  const {session,view,find}=await harness(375,812);
+  await session.start('L01');await session.pause();session.match!.realStartedAt=NOW-86400001;view.draw(1000);
+  assert.equal(session.expired,true);const before=JSON.stringify(session.match!.battle),exit=find('back');assert.equal(exit.label,'回首页');
+  exit.run();for(let i=0;i<60&&session.busy;i++)await new Promise(resolve=>setImmediate(resolve));view.draw(1200);
+  assert.equal(session.page,'home');assert.equal(JSON.stringify(session.match!.battle),before);assert.equal(session.match!.battle.status,'paused');
+});

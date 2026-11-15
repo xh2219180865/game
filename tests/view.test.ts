@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GameSession } from '../src/app/session.ts';
 import type { Page } from '../src/app/session.ts';
-import { GameView } from '../src/render/game.ts';
+import { GameView, type Region } from '../src/render/game.ts';
 import { freshProfile, CARD_IDS, CARDS } from '../src/core/progress.ts';
 import { advanceBattle, applyBattleAction, createBattle } from '../src/core/battle.ts';
-import { COLORS, arrivalAccent, cardAccent, soldier } from '../src/render/art.ts';
+import { CAMP_COUNT_FONT, COLORS, arrivalAccent, cardAccent, soldier } from '../src/render/art.ts';
 import { armyPosition, distance } from '../src/core/geometry.ts';
 import { dispatchPreview } from '../src/render/battle-presentation.ts';
 import { SLOT_KEYS } from '../src/app/storage.ts';
@@ -96,12 +96,12 @@ for(const reduced of [false,true])test(`G4.2: passive bonuses are absent from th
 });
 test('U07: ordinary text palette pairs retain at least 4.5 to 1 contrast',()=>{
   const luminance=(hex:string)=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i]!,0);
-  for(const [background,foreground]of [[COLORS.paper,COLORS.ink],[COLORS.surface,COLORS.ink],[COLORS.paper,COLORS.muted],[COLORS.surface,COLORS.muted],[COLORS.enemy2,COLORS.ink],[COLORS.neutral,COLORS.ink],[COLORS.player,'#FFFFFF'],[COLORS.enemy1,'#FFFFFF'],[COLORS.enemy3,'#FFFFFF']]){
+  for(const [background,foreground]of [[COLORS.paper,COLORS.ink],[COLORS.surface,COLORS.ink],[COLORS.paper,COLORS.muted],[COLORS.surface,COLORS.muted],[COLORS.enemy2,COLORS.ink],[COLORS.neutral,COLORS.ink],[COLORS.player,'#FFFFFF'],[COLORS.enemy1,'#FFFFFF'],[COLORS.enemy3,'#FFFFFF'],['#44372A','#F6E7C7']]){
     const a=luminance(background!),b=luminance(foreground!);assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5,`${background}/${foreground} loses text contrast`);
   }
 });
 function drawing(){
-  let depth=0;const states:Record<string,unknown>[]=[];const statuses:{text:string;color:unknown}[]=[],labels:string[]=[],strokes:{width:unknown;alpha:unknown;color:unknown}[]=[],scales:number[]=[];const c:Record<string,unknown>={font:'16px sans-serif',globalAlpha:1,lineWidth:1,createLinearGradient:()=>({addColorStop:()=>{}}),createRadialGradient:()=>({addColorStop:()=>{}}),save:()=>{states.push({...c});depth++;},restore:()=>{assert.ok(depth>0);const state=states.pop()!;for(const key of Object.keys(c))if(!(key in state))delete c[key];Object.assign(c,state);depth--;},stroke:()=>strokes.push({width:c.lineWidth,alpha:c.globalAlpha,color:c.strokeStyle}),scale:(x:number)=>scales.push(x),fillText:(s:string)=>{labels.push(s);if(String(c.font).startsWith('600 11px')&&/^(?:尽·)?[0-9.]+s$/.test(s))statuses.push({text:s,color:c.fillStyle});},measureText:(s:string)=>({width:[...s].reduce((n,char)=>n+(/[^\x00-\x7F]/.test(char)?1:.55),0)*(parseFloat(String(c.font).match(/(\d+)px/)?.[1]??'16'))})};
+  let depth=0;const states:Record<string,unknown>[]=[];const statuses:{text:string;color:unknown}[]=[],labels:string[]=[],strokes:{width:unknown;alpha:unknown;color:unknown}[]=[],scales:number[]=[];const c:Record<string,unknown>={font:'16px sans-serif',globalAlpha:1,lineWidth:1,createLinearGradient:()=>({addColorStop:()=>{}}),createRadialGradient:()=>({addColorStop:()=>{}}),save:()=>{states.push({...c});depth++;},restore:()=>{assert.ok(depth>0);const state=states.pop()!;for(const key of Object.keys(c))if(!(key in state))delete c[key];Object.assign(c,state);depth--;},stroke:()=>strokes.push({width:c.lineWidth,alpha:c.globalAlpha,color:c.strokeStyle}),scale:(x:number)=>scales.push(x),fillText:(s:string)=>{labels.push(s);if(String(c.font).startsWith('600 11px')&&/^(?:停产(?:\/射)? |尽·)?[0-9.]+s$/.test(s))statuses.push({text:s,color:c.fillStyle});},measureText:(s:string)=>({width:[...s].reduce((n,char)=>n+(/[^\x00-\x7F]/.test(char)?1:.55),0)*(parseFloat(String(c.font).match(/(\d+)px/)?.[1]??'16'))})};
   const ctx=new Proxy(c,{get:(obj,key)=>key in obj?obj[String(key)]:(...args:unknown[])=>{for(const v of args)if(typeof v==='number')assert.ok(Number.isFinite(v));}}) as unknown as CanvasRenderingContext2D;
   return {ctx,labels,statuses,strokes,scales,depth:()=>depth};
 }
@@ -109,6 +109,35 @@ function harness(feedback=false){
   const data=new Map<string,string>();let now=NOW;const s=new GameSession({storage:{async read(k){return data.get(k)??null;},async write(k,v){data.set(k,v);},async remove(k){data.delete(k);}},now:()=>now,random:()=>.4,notify:()=>{},events:events=>{if(feedback)v.events(events);},present:event=>{if(feedback)v.present(event);}});
   const d=drawing(),v=new GameView(d.ctx,s);return {s,v,d,data,setTime:(time:number)=>{now=time;}};
 }
+
+test('fire suppression has a readable stop label, tower stop-fire label and exact game-clock expiry in every display mode',()=>{
+  for(const reduced of [false,true])for(const [width,height]of [[320,568],[375,812],[430,932]]){
+    const {s,v,d}=harness();pageProfile(s);s.page='battle';s.profile!.settings.reducedMotion=reduced;
+    const b=createBattle('A01',{id:'stop-labels',firstDragCompleted:true});s.profile!.activeMatch!.battle=b;v.viewport={width:width!,height:height!,top:16,bottom:12};
+    for(const camp of b.camps)camp.feintUntil=4000;
+    const before=JSON.stringify(b);v.draw(0);
+    for(const camp of b.camps)assert.ok(d.labels.includes(`${camp.type==='fort'?'停产/射':'停产'} ${width===320?'4':'4.0'}s`));
+    d.labels.length=0;v.draw(100000);assert.equal(d.labels.filter(t=>t.startsWith('停产')).length,b.camps.length,'wall time does not remove stop labels');assert.equal(JSON.stringify(b),before);
+    advanceBattle(b,4000);d.labels.length=0;v.draw(100001);assert.ok(!d.labels.some(t=>t.startsWith('停产')));assert.equal(d.depth(),0);
+  }
+});
+
+test('committed upgrades assemble local timber once, freeze in pause and never replay after reload',async()=>{
+  for(const reduced of [false,true]){
+    const {s,v,d}=harness(true);await s.load();s.profile!.settings.reducedMotion=reduced;s.profile!.firstDragCompleted=true;assert.equal(await s.start('L01'),true);
+    const camp=s.match!.battle.camps.find(c=>c.owner==='P')!;camp.garrison=30;v.draw(0);
+    assert.equal(await s.action({kind:'upgrade',targetId:camp.id}),true);assert.equal(s.match!.battle.camps.find(c=>c.id===camp.id)!.tier,2);
+    let cursor:[number,number]=[0,0];const beams:number[][]=[];
+    d.ctx.moveTo=(x,y)=>{cursor=[x,y];};d.ctx.lineTo=(x,y)=>{if(d.ctx.strokeStyle==='#9C773C')beams.push([...cursor,x,y,d.ctx.globalAlpha]);cursor=[x,y];};
+    const frame=(time:number)=>{beams.length=0;const before=JSON.stringify(s.profile);v.draw(time);assert.equal(JSON.stringify(s.profile),before);return structuredClone(beams);};
+    const initial=frame(0);
+    if(reduced)assert.equal(initial.length,0);else assert.ok(initial.some(([x,,z])=>Math.abs(z!-x!)>10),'a crossbeam joins the uprights rather than two isolated vertical rails');
+    s.match!.battle.gameMs=110;const middle=frame(110);if(!reduced)assert.notDeepEqual(middle,initial);
+    await s.pause();assert.deepEqual(frame(100000),middle,'UI time cannot advance the construction');
+    await s.load();assert.equal(frame(100001).length,0,'restoring the real new tier does not reconstruct it');
+    assert.equal(s.match!.battle.camps.find(c=>c.id===camp.id)!.tier,2);assert.equal(d.depth(),0);
+  }
+});
 function campPoint(v:GameView,s:GameSession,id:string):[number,number]{const c=s.match!.battle.camps.find(c=>c.id===id)!,board=(v as unknown as {board:{x:number;y:number;k:number}}).board;return [board.x+c.x*board.k,board.y+c.y*board.k];}
 test('camp touch: upper tower body, third-tier roof and wide building edge can begin an authoritative dispatch',async()=>{
   for(const [type,tier,width,height,dx,dy]of [['fort',1,375,812,0,-35],['barracks',3,375,812,0,-30],['barracks',3,430,932,35,0],['fort',3,320,568,0,-30]] as const){
@@ -440,9 +469,9 @@ test('H16: 256 crossing armies retain every head and persistent camp status thro
     for(const at of [0,100,3999,4000,4334,4335]){
       const batch=advanceBattle(battle,at);v.events(batch);validateBattle(battle);const before=JSON.stringify(battle);d.labels.length=0;d.statuses.length=0;d.scales.length=0;v.draw(at);
       assert.equal(JSON.stringify(battle),before);const suppressed=battle.camps.filter(c=>c.feintUntil>at),mobilized=battle.camps.filter(c=>c.mobilizeUntil>at);
-      assert.equal(d.statuses.filter(t=>t.color===COLORS.enemy1).length,suppressed.length);
+      assert.equal(d.statuses.filter(t=>t.color==='#F6E7C7').length,suppressed.length);
       assert.equal(d.statuses.filter(t=>t.color===COLORS.player).length,mobilized.length);
-      if(width===320&&at===3999){assert.equal(d.statuses.filter(t=>t.color===COLORS.enemy1&&t.text==='1s').length,9);assert.equal(d.statuses.filter(t=>t.color===COLORS.player&&t.text==='3s').length,9);}
+      if(width===320&&at===3999){assert.equal(d.statuses.filter(t=>t.color==='#F6E7C7'&&/^停产(?:\/射)? 1s$/.test(t.text)).length,9);assert.equal(d.statuses.filter(t=>t.color===COLORS.player&&t.text==='3s').length,9);}
       const resources=v as unknown as {effects:unknown[];seenEffects:Set<string>};assert.ok(resources.effects.length<=100&&resources.seenEffects.size<=400);
       if(at<4335){assert.equal(battle.armies.length,256);assert.ok(d.scales.filter(n=>Math.abs(n)===.72).length>=256,'every effective army retains its head');}
       else{assert.equal(batch.filter(e=>e.type==='arrival').length,256);assert.equal(battle.armies.length,0);}
@@ -467,7 +496,7 @@ for(const count of [40,41,256])for(const reducedMotion of [false,true])test(`H16
   const secondTrails=points.filter(t=>Math.abs(t.x-(x-26*Math.cos(angle)-4*Math.sin(angle)))<1e-8&&Math.abs(t.y-(y-26*Math.sin(angle)+4*Math.cos(angle)))<1e-8&&t.lineWidth===1);
   assert.equal(secondTrails.length,count===40&&!reducedMotion?count:0,'march has two short trails and both disappear in crowded or reduced motion');
   assert.equal(smoke.length,count===40&&!reducedMotion?1:0,'crowding removes smoke while suppression remains visible');
-  assert.ok(d.statuses.some(l=>l.color===COLORS.enemy1));
+  assert.ok(d.statuses.some(l=>l.color==='#F6E7C7'));
   const feet=points.filter(t=>t.lineWidth===3&&t.y===8&&Math.abs(t.x)>=2&&Math.abs(t.x)<=6);assert.ok(feet.length>=count*2);
   if(count>40||reducedMotion)assert.ok(feet.every(t=>Math.abs(t.x)===4),'pressure keeps heads moving but removes periodic leg motion');
   else assert.ok(feet.some(t=>Math.abs(t.x)!==4));
@@ -484,7 +513,7 @@ for(const reducedMotion of [false,true])test(`P04 H16: mixed tower and volley pr
       assert.equal(JSON.stringify(battle),before);assert.equal(JSON.stringify(batch),eventBytes);const board=(v as unknown as {board:{x:number;y:number;k:number}}).board;
       for(const a of battle.armies){const p=armyPosition(a,at);assert.ok(translations.some(t=>Math.abs(t.x-board.x-p.x*board.k)<1e-8&&Math.abs(t.y-board.y-p.y*board.k)<1e-8));}
       assert.ok(d.scales.filter(n=>Math.abs(n)===.72).length>=battle.armies.length);for(const c of battle.camps)assert.ok(d.labels.includes(String(c.garrison)));
-      assert.equal(d.statuses.filter(t=>t.color===COLORS.enemy1).length,battle.camps.filter(c=>c.feintUntil>at).length);
+      assert.equal(d.statuses.filter(t=>t.color==='#F6E7C7').length,battle.camps.filter(c=>c.feintUntil>at).length);
       const cards=v.regions.filter(r=>r.id.startsWith('card-'));assert.equal(cards.length,4);assert.ok(cards.every(r=>r.w>=44&&r.h>=44));
       const resources=v as unknown as {effects:unknown[];seenEffects:Set<string>};assert.ok(resources.effects.length<=100&&resources.seenEffects.size<=400);assert.equal(d.depth(),0);
     }
@@ -522,7 +551,7 @@ test('U15 H17: quiet reduced-motion pressure preserves moving heads, persistent 
     assert.notDeepEqual(heads[0],heads[1],'reduced motion retains authoritative head movement');
   }
 });
-test('F05: enemy arrival shows a directional impact and two local dust puffs without delaying losses or crossing quiet and crowded limits',()=>{
+test('F05: enemy arrival releases two local dust puffs from contact onward without delaying losses or crossing quiet and crowded limits',()=>{
   for(const reduced of [false,true])for(const crowded of [false,true])for(const [width,height]of [[320,568],[375,812],[430,932]]){
     const {s,v,d}=harness();pageProfile(s);s.page='battle';s.profile!.settings.reducedMotion=reduced;v.viewport={width:width!,height:height!,top:16,bottom:12};
     const b=createBattle('A01',{id:'enemy-arrival-dust',firstDragCompleted:true}),target=b.camps.find(c=>c.id==='A01-N4')!;target.owner='E1';target.garrison=40;target.feintUntil=1000000;s.profile!.activeMatch!.battle=b;
@@ -535,9 +564,9 @@ test('F05: enemy arrival shows a directional impact and two local dust puffs wit
     d.ctx.translate=(x,y)=>{if(Math.abs(x-tx)<1e-8&&Math.abs(y-(ty-6))<1e-8)order.push('building');};
     d.ctx.stroke=()=>{if(d.ctx.lineWidth===5&&d.ctx.strokeStyle==='#493E30')order.push('blade');originalStroke.call(d.ctx);};
     d.ctx.fillText=(value,x,y)=>{if(value===String(target.garrison)&&Math.abs(x-tx)<1e-8&&Math.abs(y-(ty+24.5))<1e-8)order.push('count');originalText.call(d.ctx,value,x,y);};
-    for(const age of [0,300,549,550]){
+    for(const age of [0,80,120,279,280,300,549,550]){
 
-      advanceBattle(b,arrivalAt+age);dust.length=0;order.length=0;const before=JSON.stringify(b);v.draw(9000+age);assert.equal(JSON.stringify(b),before);assert.equal(dust.length,!reduced&&!crowded&&age<550?2:0);
+      advanceBattle(b,arrivalAt+age);dust.length=0;order.length=0;const before=JSON.stringify(b);v.draw(9000+age);assert.equal(JSON.stringify(b),before);assert.equal(dust.length,!reduced&&!crowded&&age>=120&&age<550?2:0,'dust begins at contact, never during approach');
       assert.equal(order.filter(value=>value==='blade').length,age<550?2:0,'two crossed blades remain readable, including quiet and crowded modes');
       if(age<550){assert.ok(order.indexOf('building')<order.indexOf('blade'));assert.ok(order.lastIndexOf('blade')<order.indexOf('count'),'combat never covers the authoritative count');}
       for(const dot of dust)assert.ok(Math.abs(dot.x)<=18&&Math.abs(dot.y)<=12,'dust stays near the impact anchor, below city information');
@@ -639,7 +668,7 @@ test('H16 H17: simultaneous camp timers remain separate at three viewport sizes'
   for(const [width,height]of [[320,568],[375,812],[430,932]]){
     const {s,v,d}=harness();pageProfile(s);s.profile!.activeMatch!.battle=createStatePressure().battle;s.page='battle';v.viewport={width:width!,height:height!,top:16,bottom:12};
     const rects:{text:string;x:number;y:number;w:number;h:number}[]=[];
-    d.ctx.fillText=(text,x,y)=>{if(!/^(?:尽·)?[0-9.]+s$/.test(text))return;const w=d.ctx.measureText(text).width;rects.push({text,x:x-w/2-12,y:y-7.5,w:w+14,h:15});};
+    d.ctx.fillText=(text,x,y)=>{if(!/^(?:停产(?:\/射)? |尽·)?[0-9.]+s$/.test(text))return;const w=d.ctx.measureText(text).width;rects.push({text,x:x-w/2-12,y:y-7.5,w:w+14,h:15});};
     v.draw(0);assert.equal(rects.length,18);
     for(const [i,r]of rects.entries())for(const z of rects.slice(i+1))assert.ok(!(r.x<z.x+z.w&&r.x+r.w>z.x&&r.y<z.y+z.h&&r.y+r.h>z.y),`${width}: ${JSON.stringify(r)} overlaps ${JSON.stringify(z)}`);
   }
@@ -650,9 +679,9 @@ test('H17 U15: camp status backdrops cover moving figures without map-spanning a
     s.profile!.activeMatch!.battle=b;s.profile!.settings.reducedMotion=reducedMotion;s.page='battle';v.viewport={width:width!,height:height!,top:16,bottom:12};
     let order=0;const leaders:number[]=[],backgrounds:{x:number;y:number;w:number;h:number;order:number}[]=[],statuses:number[]=[];
     d.ctx.stroke=()=>{if(d.ctx.strokeStyle==='#87958B')leaders.push(++order);};
-    d.ctx.fillRect=(x,y,w,h)=>{if(d.ctx.fillStyle===COLORS.surface)backgrounds.push({x,y,w,h,order:++order});};
+    d.ctx.fillRect=(x,y,w,h)=>{if(d.ctx.fillStyle===COLORS.surface||d.ctx.fillStyle==='#44372A')backgrounds.push({x,y,w,h,order:++order});};
     d.ctx.fillText=(text,x,y)=>{
-      if(!/^(?:尽·)?[0-9.]+s$/.test(text))return;
+      if(!/^(?:停产(?:\/射)? |尽·)?[0-9.]+s$/.test(text))return;
       const current=++order,w=d.ctx.measureText(text).width;statuses.push(current);
       assert.ok(backgrounds.some(r=>r.order<current&&r.x<=x-w/2&&r.x+r.w>=x+w/2&&r.y<=y-5.5&&r.y+r.h>=y+5.5),'each status has an opaque backing over moving figures');
     };
@@ -670,7 +699,7 @@ test('H17 U05: capture feedback avoids neighboring last-camp and suppression tex
   for(const [width,height]of [[320,568],[375,812],[430,932]]){
     v.viewport={width:width!,height:height!,top:16,bottom:18};rects.length=0;v.draw(0);
     const label=rects.find(r=>r.text.startsWith('夺城'));
-    if(label){displayed++;for(const r of rects.filter(r=>r!==label&&(/末城|^(?:尽·)?[0-9.]+s$/.test(r.text)||/^\d+$/.test(r.text))))assert.ok(!(label.x<r.x+r.w&&label.x+label.w>r.x&&label.y<r.y+r.h&&label.y+label.h>r.y),`${width}: ${label.text} overlaps ${r.text}`);}
+    if(label){displayed++;for(const r of rects.filter(r=>r!==label&&(/末城|^(?:停产(?:\/射)? |尽·)?[0-9.]+s$/.test(r.text)||/^\d+$/.test(r.text))))assert.ok(!(label.x<r.x+r.w&&label.x+label.w>r.x&&label.y<r.y+r.h&&label.y+label.h>r.y),`${width}: ${label.text} overlaps ${r.text}`);}
     else assert.equal(width,320,'only the crowded small screen may omit the decorative caption');
     assert.equal(JSON.stringify(b),before,'layout never changes ownership, troops or timers');
   }
@@ -1297,7 +1326,7 @@ test('H15: pause preserves march position and effect deadlines while reload rebu
   await s.resume();d.labels.length=0;d.statuses.length=0;v.draw(11000);assert.deepEqual(s.match!.battle,before);assert.ok(d.labels.includes('停产 +4秒'));
   await s.load();v.draw(12000);assert.equal(s.page,'pause');await s.resume();d.labels.length=0;d.statuses.length=0;d.scales.length=0;v.draw(13000);assert.equal(d.scales.filter(scale=>scale===4.5/16).length,2,'actual reload rebuilds both persistent symbols');
   assert.deepEqual(s.match!.battle,before);assert.deepEqual(s.profile!.activeInventory,inventory);assert.deepEqual(armyPosition(s.match!.battle.armies[0]!,100),position);
-  assert.ok(d.labels.includes('3.9s'));assert.ok(d.labels.includes('5.9s'));assert.ok(!d.labels.includes('停产 +4秒'));assert.ok(!d.labels.some(t=>t.startsWith('征兵 +')));
+  assert.ok(d.labels.includes('停产 3.9s'));assert.ok(d.labels.includes('5.9s'));assert.ok(!d.labels.includes('停产 +4秒'));assert.ok(!d.labels.some(t=>t.startsWith('征兵 +')));
   s.tick(100);await idle(s);assert.equal(s.match!.battle.gameMs,200);assert.ok(distance(position,armyPosition(s.match!.battle.armies[0]!,200))>0);
 });
 test('R34: old visual feedback is discarded on a new match and cannot mutate either battle',()=>{
@@ -1329,7 +1358,7 @@ test('W06: a persisted Monday rollover cancels an actual held march gesture with
 test('H18: result shows committed elapsed time, rank change and settlement week wins',()=>{
   const {s,v,d}=harness();pageProfile(s);s.page='result';const r=s.profile!.latestResult!;
   r.result.atMs=73500;r.rankPointsBefore=151;r.rankPointsAfter=143;r.rankDeltaApplied=-8;r.winsBefore=4;r.winsAfter=4;r.result.playerRank=3;r.result.independentWinner='E1';
-  v.draw(0);assert.ok(d.labels.includes('用时 01:13'));assert.ok(d.labels.includes('军功 -8'));
+  v.draw(0);assert.ok(d.labels.join('').includes('用时 01:13'));assert.ok(d.labels.includes('军功 -8'));
   assert.ok(d.labels.some(t=>t.includes('当前 143')));assert.ok(!d.labels.some(t=>t.includes('当前军衔调整')),'the default result keeps detailed rank history collapsed');
   for(let i=0;i<60&&!v.regions.some(r=>r.id==='result-details');i++){v.wheel(24);v.draw(i+1);}
   const disclosure=v.regions.find(r=>r.id==='result-details');assert.ok(disclosure&&disclosure.h>=44);disclosure.run();v.draw(100);
@@ -1407,16 +1436,17 @@ test('H13: committed supply actions publish +8 only after the real 42 to 48 to 5
   d.labels.length=0;d.statuses.length=0;v.draw(50);assert.ok(d.labels.includes('乡勇 +8'));assert.equal(await s.action({kind:'card',cardId:'supply',targetId:id}),false);
   d.labels.length=0;d.statuses.length=0;v.draw(51);assert.ok(d.labels.includes('乡勇 +8'));assert.ok(!d.labels.includes('乡勇 +14'));
 });
-test('F04 F10: successful reinforcement animates settled conversion, full camps and reduced motion do not add figures',()=>{
-  for(const [garrison,reduced]of [[0,false],[50,false],[0,true]] as const){
+test('F04 F10: successful reinforcement animates settled conversion; full, quiet and crowded scenes omit extra figures',()=>{
+  for(const [garrison,reduced,crowded]of [[0,false,false],[50,false,false],[0,true,false],[0,false,true]] as const){
     const {s,v,d}=harness();pageProfile(s);const b=createBattle('L03',{id:'arrival-feedback',firstDragCompleted:true});s.profile!.activeMatch!.battle=b;s.page='battle';s.profile!.settings.reducedMotion=reduced;
     const source=b.camps.find(c=>c.id==='L03-P1')!,target=b.camps.find(c=>c.id==='L03-P2')!;source.garrison=20;target.garrison=garrison;
     for(const c of b.camps)c.feintUntil=1000000;
     applyBattleAction(b,{kind:'dispatch',faction:'P',sequence:1,sourceId:source.id,targetId:target.id});const events=advanceBattle(b,b.armies[0]!.arrivalAtMs);
-    assert.equal(target.garrison,garrison===50?50:10);assert.equal(target.type,'archery');const snapshot=JSON.stringify(b);
-    v.events(events);d.scales.length=0;v.draw(0);assert.equal(d.scales.includes(.7),garrison===0&&!reduced);
+    assert.equal(target.garrison,garrison===50?50:10);assert.equal(target.type,'archery');
+    if(crowded)for(let sequence=2;sequence<=42;sequence++){source.garrison=2;assert.ok(applyBattleAction(b,{kind:'dispatch',faction:'P',sequence,sourceId:source.id,targetId:target.id}).ok);}const snapshot=JSON.stringify(b);
+    v.events(events);d.scales.length=0;v.draw(0);assert.equal(d.scales.includes(.7),garrison===0&&!reduced&&!crowded);
     assert.equal(JSON.stringify(b),snapshot);assert.equal(d.depth(),0);
-    b.status='paused';d.scales.length=0;v.draw(10000);assert.equal(d.scales.includes(.7),garrison===0&&!reduced,'wall-clock pause does not finish the arrival');
+    b.status='paused';d.scales.length=0;v.draw(10000);assert.equal(d.scales.includes(.7),garrison===0&&!reduced&&!crowded,'wall-clock pause does not finish the arrival');
     b.gameMs+=550;d.scales.length=0;v.draw(10001);assert.ok(!d.scales.includes(.7));
   }
 });
@@ -1448,7 +1478,7 @@ test('G4 H13: renewing suppression uses a 280 ms accent and retains the complete
   v.events(applyBattleAction(b,{kind:'card',cardId:'feint',faction:'P',sequence:1,targetId:'A01-E1'}).events);b.gameMs=50;
   v.events(applyBattleAction(b,{kind:'card',cardId:'feint',faction:'P',sequence:2,targetId:'A01-E1'}).events);assert.equal(b.camps.find(c=>c.id==='A01-E1')!.feintUntil,8000);
   d.scales.length=0;v.draw(50);assert.ok(d.scales.includes(14/16));
-  b.gameMs=330;d.scales.length=0;d.labels.length=0;d.statuses.length=0;v.draw(330);assert.ok(!d.scales.includes(14/16));assert.ok(d.labels.includes('停产 +8秒'));assert.ok(d.labels.includes('7.7s'));assert.equal(b.factions.find(f=>f.id==='P')!.inventory.feint,0);
+  b.gameMs=330;d.scales.length=0;d.labels.length=0;d.statuses.length=0;v.draw(330);assert.ok(!d.scales.includes(14/16));assert.ok(d.labels.includes('停产 +8秒'));assert.ok(d.labels.includes('停产 7.7s'));assert.equal(b.factions.find(f=>f.id==='P')!.inventory.feint,0);
 });
 
 test('S03: pause retains full-size camp and march positions while its backdrop rejects input and clock advancement',async()=>{
@@ -1459,7 +1489,7 @@ test('S03: pause retains full-size camp and march positions while its backdrop r
     const originalBoard={...(v as unknown as {board:{x:number;y:number;k:number}}).board};await s.pause();
     const before=JSON.stringify(s.profile),bytes=[...data],shifts:{x:number;y:number}[]=[];
     d.ctx.translate=(x,y)=>{shifts.push({x,y});};d.labels.length=0;d.statuses.length=0;v.draw(101);
-    assert.ok(d.labels.includes('休整片刻'));assert.deepEqual((v as unknown as {board:unknown}).board,originalBoard);
+    assert.ok(d.labels.includes('已暂停'));assert.deepEqual((v as unknown as {board:unknown}).board,originalBoard);
     const b=s.match!.battle,{x:ox,y:oy,k}=originalBoard;
     for(const c of b.camps){assert.ok(shifts.some(p=>Math.abs(p.x-(ox+c.x*k))<.001&&Math.abs(p.y-(oy+c.y*k-6))<.001));assert.ok(d.labels.includes(String(c.garrison)));}
     for(const a of b.armies){const p=armyPosition(a,b.gameMs);assert.ok(shifts.some(q=>Math.abs(q.x-(ox+p.x*k))<.001&&Math.abs(q.y-(oy+p.y*k))<.001));}
@@ -1479,18 +1509,31 @@ test('U04 S10: closing the pause panel resumes temporary practice and preserves 
   }
 });
 
-test('P3: page and confirmation fade for 180 UI ms, or stay static in reduced motion, with immediate actions',async()=>{
+test('P3: only the pause order fades for 140 UI ms, confirmations for 180 ms, with immediate actions',async()=>{
   for(const reduced of [false,true]){
     const {s,v,d,data}=await readyCards();s.profile!.settings.reducedMotion=reduced;await s.pause();const before=JSON.stringify(s.profile),bytes=[...data];
-    const washes:number[]=[];d.ctx.fillRect=(x,y,w,h)=>{if(x===0&&y===0&&w===375&&h===812&&d.ctx.fillStyle==='#171311'&&d.ctx.globalAlpha<1)washes.push(d.ctx.globalAlpha);};
-    v.draw(100);if(reduced)assert.equal(washes.length,0);else assert.ok(washes.some(a=>Math.abs(a-.18)<.001));assert.ok(v.regions.some(r=>r.id==='resume'));
-    washes.length=0;v.draw(190);if(reduced)assert.equal(washes.length,0);else assert.ok(washes.some(a=>Math.abs(a-.09)<.001));washes.length=0;v.draw(280);assert.equal(washes.length,0);
+    const washes:number[]=[],orderAlpha:number[]=[];d.ctx.fillRect=(x,y,w,h)=>{if(x===0&&y===0&&w===375&&h===812&&d.ctx.fillStyle==='#171311'&&d.ctx.globalAlpha<1)washes.push(d.ctx.globalAlpha);};
+    const originalText=d.ctx.fillText;d.ctx.fillText=(label,x,y)=>{if(label==='已暂停')orderAlpha.push(d.ctx.globalAlpha);originalText.call(d.ctx,label,x,y);};
+    v.draw(100);assert.equal(washes.length,0,'the frozen battlefield has no whole-screen transition wash');assert.equal(orderAlpha.at(-1),reduced?1:.7);assert.ok(v.regions.some(r=>r.id==='resume'));
+    v.draw(170);assert.ok(Math.abs(orderAlpha.at(-1)!-(reduced?1:.85))<.001);v.draw(240);assert.equal(orderAlpha.at(-1),1);
     v.draw(5000);assert.equal(washes.length,0);assert.equal(JSON.stringify(s.profile),before);assert.deepEqual([...data],bytes);
     v.wheel(10000);v.draw(5001);v.regions.find(r=>r.id==='forfeit')!.run();
     const alpha:number[]=[];d.ctx.fillText=(label)=>{if(label==='放弃本局？')alpha.push(d.ctx.globalAlpha);};
     v.draw(6000);assert.equal(alpha.at(-1),reduced?1:.82);assert.ok(v.regions.some(r=>r.id==='modal-confirm'));assert.ok(v.regions.every(r=>r.id.startsWith('modal-')));
     v.draw(6090);assert.ok(Math.abs(alpha.at(-1)!-(reduced?1:.91))<.001);v.draw(6180);assert.equal(alpha.at(-1),1);
     v.regions.find(r=>r.id==='modal-cancel')!.run();v.draw(6181);assert.equal(JSON.stringify(s.profile),before);assert.deepEqual([...data],bytes);
+  }
+});
+
+test('wooden actions press over 80 UI ms without moving hit regions or suppressing a quick tap',async()=>{
+  for(const reduced of [false,true]){
+    const {s,v,d}=await readyCards();s.profile!.settings.reducedMotion=reduced;s.page='settings';v.draw(0);v.draw(500);
+    const r=v.regions.find(r=>r.id==='settings-done')!,positions:number[]=[];const original=d.ctx.fillText;
+    d.ctx.fillText=(label,x,y)=>{if(label===r.label)positions.push(y);original.call(d.ctx,label,x,y);};
+    const rect=({run,...rest}:Region)=>rest;
+    v.down(31,r.x+r.w/2,r.y+r.h/2);v.draw(500);v.draw(540);v.draw(580);
+    const base=r.y+r.h/2;assert.deepEqual(positions,reduced?[base,base,base]:[base,base+1,base+2]);assert.deepEqual(rect(v.regions.find(z=>z.id===r.id)!),rect(r));
+    v.cancel(31);v.draw(600);v.down(32,r.x+r.w/2,r.y+r.h/2);v.up(32,r.x+r.w/2,r.y+r.h/2);assert.notEqual(s.page,'settings','a tap never waits for the press animation');
   }
 });
 
@@ -1603,7 +1646,7 @@ test('H17 N63: stationary render time never changes real camp or marching counts
   const before=JSON.stringify(b);v.draw(100);const first=texts.filter(t=>t.font.startsWith('600 14px')&&t.text==='10');assert.equal(first.length,1,'one ordinary army must have one exact count label');
   for(const wallTime of [200,5000,90000]){texts.length=0;v.draw(wallTime);assert.deepEqual(texts.filter(t=>t.font.startsWith('600 14px')&&t.text==='10'),first);assert.equal(JSON.stringify(b),before);}
   assert.equal(b.armies[0]!.remainingCount,10);assert.equal(b.camps.find(c=>c.id==='A01-P1')!.garrison,10);
-  for(const c of b.camps)assert.ok(texts.some(t=>t.text===String(c.garrison)&&t.font==='600 16px Georgia, "Songti SC", serif'),'every city keeps its exact original integer');
+  for(const c of b.camps)assert.ok(texts.some(t=>t.text===String(c.garrison)&&t.font===CAMP_COUNT_FONT),'every city keeps its exact original integer');
 });
 
 test('U04 N39: rank rules are folded initially, explicitly readable and never spend inventory or write progress',async()=>{

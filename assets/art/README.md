@@ -1,5 +1,32 @@
 # 原创美术资源
 
+## 2026-11-13 战场与军令材质
+
+本次以正式首页为画风参照，用内置 imagegen 新制地表、营寨与七策器物；[制作母版、完整提示词和导出记录](../../artifacts/ui-direction-v2/battle-style/README.md) 均已保存。下列五张替换原地表／营寨／卡图的运行路径，图片总数仍为 14；旧图不删除，但不随包复制。运行清单仍以 `src/render/assets.ts` 为准。
+
+| 运行图 | 尺寸 | 字节 | 用途 |
+| --- | --- | --- | --- |
+| battlefield-plains.jpg | 589×887 | 87,881 | 旧土、灰岩、疏林地表 |
+| battlefield-snow.jpg | 590×887 | 94,296 | 冷灰冻土、稀疏霜雪 |
+| battlefield-desert.jpg | 589×887 | 85,383 | 干燥边地、风化岩坡 |
+| siege-camps.png | 768×768 | 888,533 | 十二营寨与四个静态军士源窗，真 RGBA |
+| strategy-props.png | 640×320 | 308,559 | 七种器物，4×2 图集末格留空，真 RGBA |
+
+三种地表不再覆盖浅色洗白层；完整地表载入后不叠加额外小石堆，失败保留原 Canvas 景物。营寨用旧木、灰石、烟色瓦檐，一级／二级／三级绘制预算为 52×44／60×51／66×56，仍在原 66×56 包络内底对齐。四类六帧军士沿用原图集。七策器物共用于战场、图鉴、详情、战前与选策，图鉴／选策另用现有绢布纹理与木条装裱；锁态继续使用灰色 Canvas 轮廓。
+
+## 2026-11-10 正式内页场景
+
+运行清单以 `src/render/assets.ts` 的 14 张图为准。下方各日期的 7／9／10 张数量是历史记录。新增三张场景来自 [逐页设计母图和完整提示词](../../artifacts/ui-direction-v2/page-design/image-prompts.json)，没有再生成或覆盖母图；文字、状态、地图和按钮由 Canvas 实时绘制。
+
+| 运行图 | 尺寸 | 字节 | 来源与用途 |
+| --- | --- | --- | --- |
+| war-table.jpg | 550×825 | 57,261 | scenes/war-table.png；俯视手册、战前、记录案 |
+| drill-yard.jpg | 550×825 | 79,418 | scenes/drill-yard.png；演武场关目 |
+| order-archive.jpg | 550×825 | 42,079 | scenes/order-archive.png；军令架和周榜告示 |
+| command-cards.jpg | 768×384 | 75,225 | 既有 a-cards.jpg 等比编码；七策画片 |
+
+以上以 Pillow JPEG 76、优化／渐进编码制作，工具仅用于制作，不加入项目依赖。`command-cards.jpg` 替换旧大卡图的运行路径，旧图保留为源记录；不降低营地或军士图集尺寸。纸面材质复用 war-table 的空白绢布裁切，不新增图片。字体资产另见 [本地题字字集](../fonts/README.md)。包体与桌面／真机验证边界只记在开发计划。
+
 军帐设置使用 field-tent.jpg（550×1100，109,885 字节）。用 imagegen 生成帐篷、灯盏、木案和空白绢布。母版 exec-b976940d-3164-4cc1-a6e6-7ddf6e87b746.png。JPEG 66。文字和可交互控件由 Canvas 绘制。
 
 

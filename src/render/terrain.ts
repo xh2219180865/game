@@ -16,8 +16,8 @@ function oval(ctx:CanvasRenderingContext2D,x:number,y:number,rx:number,ry:number
 }
 
 /** Draw beneath battle routes and camps, in the caller's local battlefield rectangle. */
-export function drawTerrain(ctx:CanvasRenderingContext2D,width:number,height:number,camps:readonly CampCenter[],mapId:string,routes:readonly SceneryRoute[]=[]):void{
-  if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return;
+export function drawTerrain(ctx:CanvasRenderingContext2D,width:number,height:number,camps:readonly CampCenter[],mapId:string,routes:readonly SceneryRoute[]=[]):boolean{
+  if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return false;
   const centers=camps.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
   let seed=0;for(let i=0;i<mapId.length;i++)seed=(seed*31+mapId.charCodeAt(i))>>>0;
   const scale=Math.min(1,width/375,height/400);
@@ -27,12 +27,11 @@ export function drawTerrain(ctx:CanvasRenderingContext2D,width:number,height:num
   ctx.fillStyle=ground[0];ctx.fillRect(0,0,width,height);
   // Warm grey earth ties the battlefield to the courtyard's stone and foliage.
   // Existing landscape pigments use ordinary source-over drawing, without filters.
-  ctx.save();ctx.globalAlpha*=mapId==='A01'?.86:.38;
+  ctx.save();
   const painted=drawArt(ctx,artwork,0,0,width,height,'cover');ctx.restore();
   if(painted){
-    // The A01 painting already frames the open board; do not mix pale vector river bays into it.
-    if(mapId!=='A01')drawBattlefieldScenery(ctx,width,height,centers,mapId,routes);
-    ctx.restore();return;
+    // Every climate now has its own painted framing; procedural scenery is only a missing-image fallback.
+    ctx.restore();return true;
   }
   // Broad, quiet colour planes leave the battle readable without suggesting impassable terrain.
   ctx.fillStyle=ground[1];ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(width,0);ctx.lineTo(width,height*.31);ctx.bezierCurveTo(width*.72,height*.2,width*.64,height*.39,width*.4,height*.27);ctx.bezierCurveTo(width*.16,height*.14,width*.14,height*.41,0,height*.3);ctx.closePath();ctx.fill();
@@ -58,5 +57,5 @@ export function drawTerrain(ctx:CanvasRenderingContext2D,width:number,height:num
     oval(ctx,p.x+24*scale,p.y+21*scale,4*scale,1.5*scale,'#A8AA9D');
   }
   drawBattlefieldScenery(ctx,width,height,centers,mapId,routes);
-  ctx.restore();
+  ctx.restore();return false;
 }

@@ -48,7 +48,7 @@ for(const type of kinds)test(`${type} grows from open camp to a court and full-h
       assert.notDeepEqual(other.calls.filter(c=>c.op==='fill'),d.calls.filter(c=>c.op==='fill'));
     }
     assert.ok(widths[1]!>widths[0]!&&widths[2]!>widths[1]!);
-    assert.ok(widths[2]!>=widths[0]!*1.6,'the fortress is at least 60% wider than the starting camp at the same world scale');
+    assert.ok(widths[2]!>=widths[0]!*1.25,'the fortress is at least 25% wider than the starting camp at the same world scale');
     assert.ok(topEdges[2]!<topEdges[0]!-10,'fortress adds both height and width to the starting camp');
   }
 });

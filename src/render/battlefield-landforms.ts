@@ -80,31 +80,36 @@ export function battlefieldLandforms(width:number,height:number,camps:readonly S
   const key=JSON.stringify([width,height,mapId,camps,routes]);const existing=cache.get(key);if(existing)return existing;
   const plan=planBattlefieldLandforms(width,height,camps,routes,mapId);if(cache.size>=12)cache.delete(cache.keys().next().value!);cache.set(key,plan);return plan;
 }
-function riverPath(ctx:CanvasRenderingContext2D,river:RiverLandform):void {ctx.beginPath();river.points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));}
 function riverBand(ctx:CanvasRenderingContext2D,river:RiverLandform,halfWidth:number,color:string):void {
   ctx.fillStyle=color;ctx.beginPath();let started=false;
-  for(const side of [-1,1])for(let j=0;j<river.points.length;j++){
-    const i=side<0?j:river.points.length-1-j,p=river.points[i]!,a=river.points[Math.max(0,i-1)]!,b=river.points[Math.min(river.points.length-1,i+1)]!;
-    const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,w=halfWidth*(.92+.08*Math.sin(i*1.63));
-    const x=p.x-dy/d*w*side,y=p.y+dx/d*w*side;if(started)ctx.lineTo(x,y);else{ctx.moveTo(x,y);started=true;}
+  const steps=(river.points.length-1)*2;
+  for(const side of [-1,1])for(let j=0;j<=steps;j++){
+    const index=side<0?j:steps-j,i=Math.min(river.points.length-2,Math.floor(index/2)),t=index/2-i;
+    const a=river.points[i]!,b=river.points[i+1]!,dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    // Roughness stays inside the planned bank envelope, away from camps and bridge endpoints.
+    const w=halfWidth*(.85+.1*Math.sin(index*1.63+side)+.05*Math.sin(index*.71));
+    const x=a.x+dx*t-dy/d*w*side,y=a.y+dy*t+dx/d*w*side;if(started)ctx.lineTo(x,y);else{ctx.moveTo(x,y);started=true;}
   }
   ctx.closePath();ctx.fill();
 }
 
 
 /** Beneath roads/camps. Still water and etched rock need no particles or animation clock. */
-export function drawBattlefieldLandforms(ctx:CanvasRenderingContext2D,plan:BattlefieldLandforms,mapId:string):void {
+export function drawBattlefieldLandforms(ctx:CanvasRenderingContext2D,plan:BattlefieldLandforms,mapId:string,paintedTerrain=false):void {
   const snow=mapId==='A02'||mapId==='L02',sand=mapId==='A03'||mapId==='L03',s=plan.scale;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   if(plan.river){const r=plan.river;
-    riverBand(ctx,r,r.width/2+r.bank+2*s,snow?'#74847B':'#786C4D');
-    riverBand(ctx,r,r.width/2+r.bank,snow?'#CCD5C8':sand?'#B6A179':'#ACAA80');
-    riverBand(ctx,r,r.width/2,snow?'#6C8C92':sand?'#6D8C80':'#5F817A');
-    riverPath(ctx,r);ctx.lineWidth=r.width*.48;ctx.strokeStyle=snow?'#92B0B0':'#83A69A';ctx.stroke();
-    ctx.lineWidth=.8*s;ctx.strokeStyle=snow?'#D7E3D8':'#BDD0B4';
-    for(let i=2;i<r.points.length-2;i+=2){const p=r.points[i]!;ctx.beginPath();ctx.moveTo(p.x-5*s,p.y-2*s);ctx.quadraticCurveTo(p.x,p.y-1*s,p.x+5*s,p.y-2*s);ctx.stroke();}
+    riverBand(ctx,r,r.width/2+r.bank+2*s,snow?'#353C3B50':'#211D1940');
+    riverBand(ctx,r,r.width/2+r.bank,snow?'#7C847B60':sand?'#806D5060':'#635B4460');
+    riverBand(ctx,r,r.width/2,snow?'#3A4748BA':sand?'#4A4B39AD':'#394039AD');
+    // Broken reflections replace the full-length light stripe; the river's planned path stays intact.
+    ctx.lineWidth=2.4*s;ctx.strokeStyle=snow?'#8D9B9429':'#A3A58B20';ctx.beginPath();
+    for(let i=2;i<r.points.length-2;i+=3){const p=r.points[i]!,offset=Math.sin(i*1.7)*r.width*.13;ctx.moveTo(p.x-5*s,p.y+offset);ctx.lineTo(p.x+3*s,p.y+offset+.5*s);}ctx.stroke();
+    ctx.lineWidth=.6*s;ctx.strokeStyle=snow?'#ABB6AE55':'#A6AA9140';ctx.beginPath();
+    for(let i=2;i<r.points.length-2;i+=2){const p=r.points[i]!,offset=Math.sin(i)*r.width*.18;ctx.moveTo(p.x-4*s,p.y+offset);ctx.quadraticCurveTo(p.x,p.y+offset+1*s,p.x+2*s,p.y+offset);}ctx.stroke();
   }
-  for(const m of plan.mountains){
+  // The new landscape already supplies full-size rock faces; loose miniature piles are fallback scenery only.
+  for(const m of paintedTerrain?[]:plan.mountains){
     const climate=snow?'snow':sand?'desert':'plains';
     if(drawArt(ctx,`landform-${climate}-${m.seed%2===0?0:1}`,m.x-m.width/2,m.y-m.height,m.width,m.height,'bottom'))continue;
     ctx.save();ctx.translate(m.x-m.width/2,m.y-m.height);ctx.scale(m.width/68,m.height/45);
@@ -127,11 +132,13 @@ export function drawBattlefieldBridges(ctx:CanvasRenderingContext2D,plan:Battlef
   const s=plan.scale;ctx.save();
   for(const b of plan.bridges){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.angle);const start=-b.length/2,end=b.length/2,w=b.width/2;
     ctx.fillStyle='#433C2A66';ctx.fillRect(start-2*s,-w-2*s,b.length+4*s,b.width+5*s);
-    ctx.fillStyle='#8D6C43';ctx.fillRect(start,-w,b.length,b.width);
-    ctx.strokeStyle='#C1A36B';ctx.lineWidth=1.4*s;ctx.beginPath();ctx.moveTo(start,-w+1*s);ctx.lineTo(end,-w+1*s);ctx.moveTo(start,w-1*s);ctx.lineTo(end,w-1*s);ctx.stroke();
-    ctx.strokeStyle='#59472F';ctx.lineWidth=.7*s;ctx.beginPath();for(let x=start+3*s;x<end;x+=4*s){ctx.moveTo(x,-w+2*s);ctx.lineTo(x+.6*s,w-2*s);}ctx.stroke();
+    ctx.fillStyle='#665339';ctx.fillRect(start,-w,b.length,b.width);
+    // Low stone sills join the road to the deck; they introduce no extra crossing or obstacle.
+    ctx.fillStyle='#7B766266';ctx.fillRect(start-1*s,-w-1*s,3*s,b.width+2*s);ctx.fillRect(end-2*s,-w-1*s,3*s,b.width+2*s);
+    ctx.strokeStyle='#A18D6B';ctx.lineWidth=.85*s;ctx.beginPath();ctx.moveTo(start,-w+1*s);ctx.lineTo(end,-w+1*s);ctx.moveTo(start,w-1*s);ctx.lineTo(end,w-1*s);ctx.stroke();
+    ctx.strokeStyle='#28221980';ctx.lineWidth=.8*s;ctx.beginPath();for(let x=start+3*s;x<end;x+=4*s){const wear=Math.sin(x/s*1.3)*.6*s;ctx.moveTo(x,-w+1.5*s);ctx.lineTo(x+wear,w-1.5*s);}ctx.stroke();
     // Low timber rails indicate a deck, without hiding a squad or creating a new hit target.
-    ctx.strokeStyle='#5D4B31';ctx.lineWidth=1.2*s;ctx.beginPath();for(const y of [-w-1*s,w+1*s]){ctx.moveTo(start,y);ctx.lineTo(end,y);for(let x=start;x<=end;x+=8*s){ctx.moveTo(x,y+2*s);ctx.lineTo(x,y-3*s);}}ctx.stroke();if(activeRoutes.includes(b.routeIndex)){ctx.strokeStyle='#6D6654';ctx.lineWidth=2.2*s;ctx.beginPath();ctx.moveTo(start,0);ctx.lineTo(end,0);ctx.stroke();}ctx.restore();
+    ctx.strokeStyle='#4D402D';ctx.lineWidth=1.2*s;ctx.beginPath();for(const y of [-w-1*s,w+1*s]){ctx.moveTo(start,y);ctx.lineTo(end,y);for(let x=start;x<=end;x+=8*s){ctx.moveTo(x,y+2*s);ctx.lineTo(x,y-3*s);}}ctx.stroke();if(activeRoutes.includes(b.routeIndex)){ctx.strokeStyle='#6D6654';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(start,0);ctx.lineTo(end,0);ctx.stroke();ctx.strokeStyle='#E8D4A680';ctx.lineWidth=1;ctx.stroke();}ctx.restore();
   }
   ctx.restore();
 }

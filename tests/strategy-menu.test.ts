@@ -44,18 +44,18 @@ async function harness(width:number,height:number){
 const rect=({id,x,y,w,h}:Region)=>({id,x,y,w,h});
 function overlap(a:Region,b:Region){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 
-for(const [width,height]of SIZES)test(`compact strategy menu ${width}: all seven cards fit the safe first screen in four active and three passive slots`,async()=>{
+for(const [width,height]of SIZES)test(`compact strategy menu ${width}: four active orders occupy two shelves and three passive scrolls remain reachable`,async()=>{
   const h=await harness(width,height);h.s.profile!.unlockedCardIds=['mobilize'];h.s.profile!.activeInventory.mobilize=0;h.draw();
-  const before=h.snapshot(),cards=CARD_IDS.map(id=>h.find(`library-${id}`)),active=cards.slice(0,4),passive=cards.slice(4);
-  assert.equal(new Set(active.map(r=>r.y)).size,1);assert.equal(new Set(passive.map(r=>r.y)).size,1);assert.ok(passive[0]!.y>active[0]!.y+active[0]!.h);
+  const before=h.snapshot(),cards=CARD_IDS.map(id=>{const r=h.seek(`library-${id}`);return {...r,y:r.y+h.state.scroll};}),active=cards.slice(0,4),passive=cards.slice(4);
+  assert.equal(new Set(active.map(r=>r.y)).size,2);assert.equal(new Set(passive.map(r=>r.y)).size,1);assert.ok(passive[0]!.y>active[0]!.y+active[0]!.h);
   for(const [i,r]of cards.entries()){
-    assert.ok(r.w>=44&&r.h>=44&&r.h<=110);assert.ok(r.x>=0&&r.x+r.w<=width&&r.y>=60&&r.y+r.h<=height-28,`${r.id} safe first screen`);
+    assert.ok(r.w>=44&&r.h>=44&&r.h<=110);assert.ok(r.x>=0&&r.x+r.w<=width&&r.y>=60,`${r.id} fits the shelf`);
     for(const other of cards.slice(i+1))assert.ok(!overlap(r,other));
   }
   assert.ok(!h.d.marks.some(m=>/持有|累计|已解锁 \d/.test(m.text)));assert.equal(cards[0]!.label,`查看${CARDS.mobilize.name}，已解锁`);
   for(const r of cards.slice(1))assert.ok(r.label.includes('未解锁'));
   for(const mark of h.d.marks.filter(m=>m.visible))assert.ok(mark.left>=0&&mark.right<=width,`${mark.text} fits horizontally`);
-  h.v.wheel(10000);h.draw();assert.equal(h.state.scroll,0,'ordinary seven-card catalogue does not scroll');assert.deepEqual(h.snapshot(),before);
+  h.v.wheel(10000);h.draw();assert.equal(h.state.scroll,h.state.maxScroll,'the last shelf is reachable on short screens');assert.deepEqual(h.snapshot(),before);
 });
 
 for(const [width,height]of SIZES)test(`strategy explanation ${width}: fixed exits and complete rules remain usable without exposing personal counts or moving the catalogue`,async()=>{
@@ -64,7 +64,7 @@ for(const [width,height]of SIZES)test(`strategy explanation ${width}: fixed exit
   for(const id of Object.keys(p.passiveLevels))p.passiveLevels[id as keyof typeof p.passiveLevels]=Number.MAX_SAFE_INTEGER;
   h.draw();const before=h.snapshot();
   for(const id of CARD_IDS){
-    h.tap(`library-${id}`);h.draw();const panel=h.find('card-sheet-surface'),close=h.find('card-sheet-close'),done=h.find('card-sheet-done');
+    h.seek(`library-${id}`);h.tap(`library-${id}`);h.draw();const panel=h.find('card-sheet-surface'),close=h.find('card-sheet-close'),done=h.find('card-sheet-done');
     assert.ok(Math.abs(panel.y+panel.h/2-(60+(height-60-28)/2))<1,'explanation is centered within the safe area');
     assert.ok(!overlap(close,done));assert.ok(!h.v.regions.some(r=>r.id.startsWith('library-')));
     for(const r of [close,done])assert.ok(r.w>=44&&r.h>=44&&r.y>=60&&r.y+r.h<=height-28);
@@ -91,7 +91,7 @@ for(const [width,height]of SIZES)test(`strategy explanation ${width}: fixed exit
 for(const [width,height]of SIZES)test(`strategy pending reward ${width}: catalogue remains read-only and the home reward action remains reachable`,async()=>{
   const h=await harness(width,height),p=h.s.profile!;p.unlockedCardIds=['mobilize'];
   p.choice={choiceId:'strategy-menu-pending',matchId:'memory-only',kind:'mixed',grantQuantity:1,candidateIds:['mobilize'],unlockSnapshot:['mobilize'],poolVersion:'first-seven-v1',weekId:p.weekId,state:'pending',selected:null};h.draw();const before=h.snapshot();
-  assert.ok(!h.v.regions.some(r=>r.id==='library-claim'));assert.equal(h.state.maxScroll,0);
+  assert.ok(!h.v.regions.some(r=>r.id==='library-claim'));
   for(const id of CARD_IDS){h.seek(`library-${id}`);const offset=h.state.scroll;h.tap(`library-${id}`);h.draw();h.tap('card-sheet-done');h.draw();assert.equal(h.state.scroll,offset);}
   h.seek('library-fortification');h.tap('library-fortification');h.draw();assert.match(h.d.marks.filter(m=>m.visible).map(m=>m.text).join(''),/通关.*解锁/);
   h.tap('card-sheet-close');h.draw();h.tap('back');h.draw();assert.equal(h.s.page,'home');assert.equal(h.find('primary').label,'领取奖励');h.tap('primary');h.draw();assert.equal(h.s.page,'choice');assert.deepEqual(h.snapshot(),before);
@@ -121,7 +121,7 @@ for(const [width,height]of SIZES)for(const maximum of [false,true])test(`prepara
     h.tap('card-sheet-done');h.draw();assert.equal(h.state.scroll,offset);assert.equal(h.s.page,'prepare');assert.deepEqual(h.snapshot(),before);
   }
   h.seek('prepare-library');h.tap('prepare-library');h.draw();assert.equal(h.s.page,'library');assert.equal(h.s.returnPage,'prepare');
-  h.tap('library-fortification');h.draw();const text=h.d.marks.filter(m=>m.visible).map(m=>m.text).join('');assert.ok(!/本周累计|当前增益|一级容量/.test(text),'opening from preparation must not turn the catalogue into a personal inventory');
+  h.seek('library-fortification');h.tap('library-fortification');h.draw();const text=h.d.marks.filter(m=>m.visible).map(m=>m.text).join('');assert.ok(!/本周累计|当前增益|一级容量/.test(text),'opening from preparation must not turn the catalogue into a personal inventory');
   h.tap('card-sheet-close');h.draw();h.tap('back');h.draw();assert.equal(h.s.page,'prepare');assert.deepEqual(h.snapshot(),before);
 });
 

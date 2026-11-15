@@ -23,11 +23,11 @@ function roofGlaze(ctx:CanvasRenderingContext2D,type:CampType,level:Tier,width:n
   const ratio=crop[2]/crop[3],w=Math.min(width,height*ratio),h=w/ratio;
   const polygons=CAMP_ROOF_PANELS[type][level];
   const color=owner==='P'?'#49A28D':owner==='E'||owner==='E1'?'#D06C50':owner==='E2'?'#D2AC4F':owner==='E3'?'#A38CC4':'#858B90';
-  ctx.save();ctx.globalAlpha*=owner===null?.78:.66;
+  ctx.save();ctx.globalAlpha*=owner===null?.50:.32;
   for(const polygon of polygons)face(ctx,color,polygon.map(([u,v])=>[-w/2+u*w,22-h+v*h] as const));
   ctx.restore();
   if(owner===null){
-    ctx.save();ctx.globalAlpha*=.42;
+    ctx.save();ctx.globalAlpha*=.18;
     for(const polygon of CAMP_WALL_PANELS[type])face(ctx,'#A5A8AA',polygon.map(([u,v])=>[-w/2+u*w,22-h+v*h] as const));
     ctx.restore();
   }
@@ -76,7 +76,7 @@ function enclosure(ctx:CanvasRenderingContext2D,level:Tier,owner:FactionId|null)
 export function drawCampArchitecture(ctx:CanvasRenderingContext2D,x:number,y:number,size:number,type:CampType,tier:number,owner:FactionId|null,aim?:number):void{
   if(![x,y,size].every(Number.isFinite)||size<=0||!['barracks','archery','relay','fort'].includes(type))return;
   const level=(Number.isFinite(tier)?Math.max(1,Math.min(3,Math.floor(tier))):1) as Tier;
-  const k=size/28,width=([40,54,66] as const)[level-1]!,height=([34,46,56] as const)[level-1]!;
+  const k=size/28,width=([52,60,66] as const)[level-1]!,height=([44,51,56] as const)[level-1]!;
   ctx.save();ctx.translate(x,y);ctx.scale(k,k);
   ctx.save();ctx.beginPath();ctx.rect(-33,-34,66,56);ctx.clip();
   // Every type and tier is a complete original settlement, never a generic fort with a prop pasted on it.

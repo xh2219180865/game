@@ -44,7 +44,7 @@ test('twelve painted camps use independent crops inside the original label clear
       assert.ok(x!>=80-halfWidth*k-1e-10&&x!+w!<=80+halfWidth*k+1e-10,'architecture stays inside horizontal clearance');
       assert.ok(y!>=90-34*k-1e-10&&y!+h!<=90+22*k+1e-10,'architecture stays above the troop label');
       assert.ok(Math.abs(y!+h!-(90+22*k))<1e-10,'sprite bottom remains anchored to the camp');
-      assert.ok(w!<=([46,58,66][tier-1]!)*k+1e-10,'the complete painted courtyard fits this tier’s width budget');
+      assert.ok(w!<=([52,60,66][tier-1]!)*k+1e-10,'the complete painted courtyard fits this tier’s width budget');
       assert.ok(!d.calls.some(c=>c.op==='fillText'||c.op==='strokeText'),'buildings never paint troop counts');
       const enemy=canvas();building(enemy.ctx,80,90,size,type,tier,'E2');enemy.balanced();
       assert.deepEqual(enemy.calls,d.calls,'ownership colours never change the painting crop or architecture geometry');

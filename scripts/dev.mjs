@@ -1,3 +1,4 @@
+import { FONT_FILES } from '../src/render/typography.ts';
 import { context } from 'esbuild';
 import { mkdir, copyFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -11,8 +12,8 @@ await ctx.watch();await ctx.rebuild();
 const root=resolve('dist/browser');
 const server=createServer(async(req,res)=>{
   let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);}catch{res.writeHead(400);res.end();return;}
-  if(Object.values(ART_SOURCES).some(path=>pathname==='/'+path)){
-    try{const body=await readFile(resolve(pathname.slice(1)));res.writeHead(200,{'Content-Type':pathname.endsWith('.png')?'image/png':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end('Art not found');}return;
+  if([...Object.values(ART_SOURCES),...FONT_FILES].some(path=>pathname==='/'+path)){
+    try{const body=await readFile(resolve(pathname.slice(1)));res.writeHead(200,{'Content-Type':pathname.endsWith('.png')?'image/png':pathname.endsWith('.ttf')?'font/ttf':pathname.endsWith('.txt')?'text/plain':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end('Art not found');}return;
   }
   const path=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
   if(path!==root&&!path.startsWith(root+'/')){res.writeHead(403);res.end();return;}

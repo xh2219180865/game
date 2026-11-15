@@ -44,6 +44,7 @@ for(const [width,height]of [[320,568],[375,812],[430,932]] as const)test(`strate
 for(const [width,height]of [[320,568],[375,812],[430,932]] as const)test(`preparation ${width}: clipped cards have no tiny touch target, while all seven remain reachable`,()=>{
   const {session,view,find,writes}=harness(width,height);session.page='prepare';view.draw(0);
   const before=JSON.stringify(session.profile);
+  for(let i=0;i<80&&!view.regions.some(r=>r.id==='prepare-rules');i++){view.wheel(10);view.draw(i+1);}
   find('prepare-rules').run();view.draw(1);
   view.wheel(10);view.draw(2);
   assert.ok(view.regions.every(r=>r.h>=44&&r.w>=44),'the original 320 px regression left four 6 px card strips clickable');

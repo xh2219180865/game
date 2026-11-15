@@ -1,3 +1,4 @@
+import { FONT_FILES } from '../src/render/typography.ts';
 import { build } from 'esbuild';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -15,8 +16,8 @@ await writeFile(`${root}/index.html`,html);
 await writeFile(`${root}/away.html`,'<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>生命周期验收 · 已离开</title><h1>已离开游戏页面</h1><p>本页不运行游戏，测试存档和中断记录保留在 4176。</p><a href="/">返回验收页面</a></html>');
 if(!process.argv.includes('--build-only'))createServer(async(req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
-  if(Object.values(ART_SOURCES).some(path=>pathname==='/'+path)){
-    try{const body=await readFile(pathname.slice(1));res.writeHead(200,{'Content-Type':pathname.endsWith('.png')?'image/png':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end();}return;
+  if([...Object.values(ART_SOURCES),...FONT_FILES].some(path=>pathname==='/'+path)){
+    try{const body=await readFile(pathname.slice(1));res.writeHead(200,{'Content-Type':pathname.endsWith('.png')?'image/png':pathname.endsWith('.ttf')?'font/ttf':pathname.endsWith('.txt')?'text/plain':'image/jpeg','Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(404);res.end();}return;
   }
   const routes={'/':'index.html','/game.js':'game.js','/away':'away.html'},file=routes[new URL(req.url,'http://localhost').pathname];
   if(!file){res.writeHead(404);res.end();return;}

@@ -1,3 +1,4 @@
+import { loadWechatFont } from './fonts.ts';
 import { GameSession } from '../app/session.ts';
 import type { StoragePort } from '../app/storage.ts';
 import { GameView } from '../render/game.ts';
@@ -8,6 +9,7 @@ interface Touch {identifier:number;clientX:number;clientY:number}
 interface TouchEvent {changedTouches:Touch[]}
 interface WindowInfo {windowWidth:number;windowHeight:number;pixelRatio:number;safeArea?:{top:number;bottom:number}}
 interface WechatPort {
+  loadFont?(path:string):string|null;
   createCanvas():HTMLCanvasElement;
   createImage():ArtImage;
   createWebAudioContext?():AudioContextPort;
@@ -27,6 +29,7 @@ interface WechatPort {
   vibrateShort?(options:{type:'light'}):void;
 }
 declare const wx:WechatPort;
+loadWechatFont(wx);
 function reportArt(){if(getArtStatus().failed)console.warn('部分画面资源未载入，暂用简化画面，可重新载入。');}
 void loadArt(()=>wx.createImage()).then(reportArt);
 const canvas=wx.createCanvas(),ctx=canvas.getContext('2d');
