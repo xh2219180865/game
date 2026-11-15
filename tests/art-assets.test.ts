@@ -19,7 +19,7 @@ function fail(image:ArtImage){image.onerror?.call(image as HTMLImageElement,new 
 test('art: current source manifest adds the polished atlas without reviving retired atlases',async()=>{
   const art=await fresh(),images:ArtImage[]=[];await art.loadArt(imageFactory(images,'success'));
   assert.deepEqual(images.map(image=>image.src),[
-    'assets/art/warfront-home.jpg','assets/art/field-tent.jpg','assets/art/war-table.jpg','assets/art/drill-yard.jpg','assets/art/order-archive.jpg','assets/art/battlefield-plains.jpg','assets/art/battlefield-snow.jpg','assets/art/battlefield-desert.jpg','assets/art/strategy-props.png','assets/art/siege-camps.png','assets/art/warfront-infantry.png','assets/art/warfront-foot.png','assets/art/warfront-cavalry.png','assets/art/warfront-landforms.png',
+    'assets/art/warfront-home.jpg','assets/art/field-tent.jpg','assets/art/war-table.jpg','assets/art/drill-yard.jpg','assets/art/order-archive.jpg','assets/art/field-plains.jpg','assets/art/field-snow.jpg','assets/art/field-desert.jpg','assets/art/strategy-props.png','assets/art/siege-camps.png','assets/art/warfront-infantry.png','assets/art/warfront-foot.png','assets/art/warfront-cavalry.png','assets/art/warfront-landforms.png',
   ]);
   let draws=0;const ctx={drawImage(){draws++;}} as unknown as CanvasRenderingContext2D;
   for(const id of ['buildings','troops','building-barracks-1','building-archery-2','building-relay-3','building-fort-3','troop-infantry-0','troop-archer-1','troop-cavalry-0','troop-guard-1']){

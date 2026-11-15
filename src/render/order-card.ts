@@ -30,27 +30,22 @@ export function drawOrderMount(ctx:CanvasRenderingContext2D,x:number,y:number,w:
  */
 export function drawOrderCard(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,id:ActiveCardId,selected:boolean,pressed:boolean,available:boolean):void{
   if(![x,y,w,h,x+w,y+h+2].every(Number.isFinite)||w<40||h<40||!['mobilize','march','supply','feint'].includes(id))return;
-  const top=y+(pressed?2:0),titleHeight=18;
+  const top=y+(pressed?2:0),titleHeight=22;
   ctx.save();ctx.setLineDash([]);ctx.lineJoin='round';
   ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
-  rounded(ctx,x+.75,top+.75,w-1.5,h-1.5,2);ctx.clip();
-  ctx.fillStyle=pressed?'#BEA780':'#E4CDA8';ctx.fillRect(x,top,w,h);
-  ctx.fillStyle='#38271D';ctx.fillRect(x,top,w,4);ctx.fillRect(x,top+h-4,w,4);
-  ctx.fillRect(x,top,4,h);ctx.fillRect(x+w-4,top,4,h);
+  drawOrderMount(ctx,x,top,w,h);
+  if(pressed){ctx.fillStyle='#39291C18';ctx.fillRect(x+4,top+4,w-8,h-10);}
   ctx.save();ctx.globalAlpha*=available?1:.52;
-  drawStrategyIllustration(ctx,x+4,top+titleHeight,w-8,h-titleHeight-4,id);
+  drawStrategyIllustration(ctx,x+6,top+titleHeight,w-12,h-titleHeight-13,id);
   ctx.restore();
   // The caller's name remains on an uncluttered silk strip, separate from the picture.
-  ctx.fillStyle=pressed?'#BEA780':'#E4CDA8';ctx.fillRect(x+4,top+4,w-8,titleHeight-4);
-  ctx.strokeStyle='#B5A489';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x+5,top+titleHeight);ctx.lineTo(x+w-5,top+titleHeight);ctx.stroke();
-  ctx.strokeStyle='#A48C65';ctx.lineWidth=.6;ctx.setLineDash([2,3]);ctx.beginPath();
-  ctx.moveTo(x+4,top+6);ctx.lineTo(x+4,top+h-5);ctx.moveTo(x+w-4,top+6);ctx.lineTo(x+w-4,top+h-5);ctx.stroke();
-  ctx.fillStyle='#8B402D';ctx.fillRect(x+4,top+4,2,12);ctx.fillRect(x+w-6,top+4,2,12);
+  // Calm the cloth behind the live name, leaving its irregular edge and battens exposed.
+  ctx.fillStyle=pressed?'#C6B18C90':'#E1CBA570';ctx.fillRect(x+5,top+5,w-10,titleHeight-6);
   ctx.restore();
   ctx.save();ctx.setLineDash([]);ctx.lineJoin='round';
   ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
-  rounded(ctx,x+1,top+1,w-2,h-2,2);ctx.strokeStyle=selected?'#964734':available?'#907C5D':'#AAA28E';ctx.lineWidth=selected?1.5:1;ctx.stroke();
   if(selected){
+    rounded(ctx,x+2,top+2,w-4,h-4,1);ctx.strokeStyle='#964734';ctx.lineWidth=1.5;ctx.stroke();
     // A small cinnabar check seal reads in greyscale too and leaves the inventory corner free.
     ctx.fillStyle='#964734';ctx.fillRect(x+5,top+5,10,10);
     ctx.strokeStyle='#F3E7C9';ctx.lineWidth=1.1;ctx.lineCap='round';ctx.beginPath();

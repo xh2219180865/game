@@ -15,6 +15,7 @@ import { battleAccentCost, cardTargetPreview, dispatchPreview, incomingSummary, 
 import type { Rect } from './battle-presentation.ts';
 import { RetreatPresentation } from './retreat.ts';
 import { drawTerrain } from './terrain.ts';
+import { drawFieldHeader, drawFieldOrderRack, fieldOrderLift } from './battlefield-ui.ts';
 import { battlefieldLandforms, drawBattlefieldLandforms, drawBattlefieldBridges } from './battlefield-landforms.ts';
 import { drawRoads, marchTrail, shotAccent, tacticalAccent, tacticalDuration, upgradeAccent } from './tactical-art.ts';
 import { drawHomeScene } from './home-scene.ts';
@@ -27,6 +28,7 @@ import { drawArmyPennant } from './army-pennant.ts';
 import { drawOrderCard, drawOrderMount } from './order-card.ts';
 import { drawStrategyIllustration } from './strategy-illustration.ts';
 import { drawSampleGround } from './sample-ground.ts';
+import { BATTLE_SPRITE_CROPS } from './battle-sprite-regions.ts';
 import type { MobileIcon } from './mobile-icons.ts';
 import { placeCampPopover } from './mobile-layout.ts';
 import { drawRankStandard } from './scheme-a.ts';
@@ -215,12 +217,12 @@ export class GameView {
   private orderButton(id:ActiveCardId,label:string,x:number,y:number,w:number,run:()=>void):void{
     const c=this.ctx,selected=this.card===id,split=label.lastIndexOf(' '),inventory=label.slice(split+1);
     const pressed=this.gesture?.region?.id===`card-${id}`&&!this.gesture.drag,yy=y+(pressed?2:0);
-    drawOrderCard(c,x,y,w,54,id,selected,pressed,inventory!=='锁'&&inventory!=='0');
-    this.text(label.slice(0,split),x+w/2,yy+11,14,COLORS.ink,650,'center',true);
+    const height=54+fieldOrderLift(this.viewport.height,this.viewport.top,this.viewport.bottom);
+    drawOrderCard(c,x,y,w,height,id,selected,pressed,inventory!=='锁'&&inventory!=='0');
+    this.text(label.slice(0,split),x+w/2,yy+13,height>70?18:15,COLORS.ink,500,'center',true);
     const badge=inventory==='锁'?'锁':`×${inventory}`;
-    this.box(x+w-33,yy+35,29,16,'#39291FEF',2,'#A58155');
-    this.text(badge,x+w-18,yy+43,11,'#FFF1D4',650,'center');
-    this.regions.push({id:`card-${id}`,label,x,y,w,h:56,run});
+    this.text(badge,x+w-10,yy+height-13,12,'#382D20',650,'right');
+    this.regions.push({id:`card-${id}`,label,x,y,w,h:height+2,run});
   }
 
   private wide(id:string,label:string,y:number,run:()=>void,primary=false):void{this.button(id,label,20,y,this.viewport.width-40,50,run,primary?'primary':'secondary');}
@@ -260,6 +262,11 @@ export class GameView {
   }
   private open(page:Page):void{this.session.returnPage=this.session.page==='battle'?'pause':this.session.page;if(this.session.page==='battle')void this.session.pause(page);else this.session.page=page;this.cancel();}
   private point(c:Point):Point{return {x:this.board.x+c.x*this.board.k,y:this.board.y+c.y*this.board.k};}
+  private campVisual(camp:Camp):{size:number;scale:number;y:number;top:number;width:number}{
+    const p=this.point(camp),size=Math.max(20,30*this.board.k)*1.12,scale=size/28;
+    const crop=BATTLE_SPRITE_CROPS[`camp-${camp.type}-${camp.tier}`],height=([44,51,56] as const)[camp.tier-1]!;
+    return {size,scale,y:p.y+16-22*scale,top:p.y+16-height*scale,width:Math.min(([52,60,66] as const)[camp.tier-1]!,height*crop[2]/crop[3])*scale};
+  }
   private route(from:Point,to:Point,color:string,animated:boolean,valid=true):void{
     const c=this.ctx,dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);if(length<12)return;
     const ux=dx/length,uy=dy/length;
@@ -274,12 +281,11 @@ export class GameView {
     c.restore();
   }
   private campAt(x:number,y:number,padding=0,sourceId?:string):Camp|null{
-    const scale=Math.max(20,30*this.board.k)/28;
     const candidates=this.session.match?.battle.camps.map(c=>({c,p:this.point(c)})).filter(({c,p})=>{
       if(sourceId&&!neighbors(this.session.match!.battle,sourceId).includes(c.id))return false;
       // Include the building's painted box above its ground point, plus the existing count/tap area.
-      const width=(c.type==='barracks'?([52,58,66] as const)[c.tier-1]!:62)*scale;
-      return Math.abs(p.x-x)<=Math.max(28,width/2)+padding&&y>=p.y-Math.max(24,6+34*scale)-padding&&y<=p.y+Math.max(32,22*scale-6)+padding;
+      const visual=this.campVisual(c);
+      return Math.abs(p.x-x)<=Math.max(28,visual.width/2)+padding&&y>=Math.min(p.y-24,visual.top)-padding&&y<=p.y+32+padding;
     }).sort((a,z)=>distance(a.p,{x,y})-distance(z.p,{x,y}));
     return candidates?.[0]?.c??null;
   }
@@ -483,27 +489,18 @@ export class GameView {
     const terrainEdges=b.ruleRevision==='1.6'?MAPS[b.mapId].roads:b.camps.flatMap((c,i)=>b.camps.slice(i+1).map(z=>[c.id,z.id] as const));
     const terrainRoutes=terrainEdges.flatMap(([a,z])=>{const from=b.camps.find(c=>c.id===a),to=b.camps.find(c=>c.id===z);return from&&to?[{from:terrainPoint(from),to:terrainPoint(to)}]:[];});
     const centers=b.camps.map(terrainPoint),landforms=b.ruleRevision==='1.6'?battlefieldLandforms(w,h-bottom-footer,centers,terrainRoutes,b.mapId):null;
-    const paintedTerrain=drawTerrain(this.ctx,w,h-bottom-footer,centers,b.mapId,terrainRoutes);
+    const paintedTerrain=drawTerrain(this.ctx,w,h,centers,b.mapId,terrainRoutes);
     if(landforms){this.ctx.save();this.ctx.beginPath();this.ctx.rect(0,0,w,h-bottom-footer);this.ctx.clip();drawBattlefieldLandforms(this.ctx,landforms,b.mapId,paintedTerrain);this.ctx.restore();}
-    const fieldShade=this.ctx.createLinearGradient(0,0,0,h-bottom-footer);
-    fieldShade.addColorStop(0,'#211A1766');fieldShade.addColorStop(.24,'#2C211611');
-    fieldShade.addColorStop(.72,'#2C211600');fieldShade.addColorStop(1,'#211A1766');
-    this.ctx.fillStyle=fieldShade;this.ctx.fillRect(0,0,w,h-bottom-footer);
     const pausePressed=this.gesture?.region?.id==='pause'&&!this.gesture.drag;
     if(interactive){
-      drawGameControl(this.ctx,18,top+8,32,'pause',pausePressed);
       this.regions.push({id:'pause',label:'暂停',x:12,y:top+2,w:44,h:44,run:()=>{this.cancel();void s.pause();}});
     }
-    const clockWidth=Math.min(88,w-200);
-    drawCourtyardHeading(this.ctx,(w-clockWidth)/2,top+7,clockWidth,33);
-    drawCourtyardHeading(this.ctx,w-98,top+10,86,28);
     const stats=battleStats(b),owned=stats.find(st=>st.faction==='P')!.camps;
     const alert=this.threats.update(b);if(alert.fresh&&s.page==='battle')this.onThreat();
-    this.text(b.deadlineMs!==null?time(b.deadlineMs-b.gameMs):time(b.gameMs),w/2,top+23,20,'#F3E1BC',650,'center');
+    drawFieldHeader(this.ctx,w,top,b.deadlineMs!==null?time(b.deadlineMs-b.gameMs):time(b.gameMs),standingSummary(b),b.ruleRevision==='1.5'?'':MAPS[b.mapId].name,pausePressed);
     const order=[...this.effects].reverse().find(({event:e,created})=>e.faction==='P'&&b.gameMs>=created&&b.gameMs-created<600&&ACTIVE_IDS.includes(e.reason as ActiveCardId)&&(e.type==='card'||e.type==='dispatch'&&e.reason==='march'));
     if(order){const id=order.event.reason as ActiveCardId;this.box(w/2-58,top+43,116,20,'#F1E9D8E3',8);cardSymbol(this.ctx,w/2-45,top+53,8,id);this.text(CARDS[id].name,w/2+9,top+53,12,COLORS.ink,650,'center');}
     else if(b.ruleRevision==='1.5')this.text('旧版直达',w/2,top+49,10,COLORS.muted,500,'center');
-    this.text(standingSummary(b),w-23,top+24,11,'#E5D4B2',600,'right');
     const selected=b.camps.find(c=>c.id===this.selected);
     const g=this.gesture,source=g?.source?b.camps.find(c=>c.id===g.source):undefined;
     const target=g?(g.drag&&g.source?this.dragTarget(g.point.x,g.point.y,g.source):this.campAt(g.point.x,g.point.y)):null;
@@ -541,14 +538,17 @@ export class GameView {
     const upgradeTargets=new Map<string,Rect>();
     const showUpgrade=interactive&&!this.card&&(!g||g.region?.id.startsWith('upgrade-camp-'))&&!this.upgradePending&&!s.busy&&b.status==='running'&&!b.awaitingFirstDispatch;
     for(const camp of b.camps){
-      const p=this.point(camp);obstacles.push({x:p.x-32,y:p.y-34,w:66,h:70});
+      const p=this.point(camp),visual=this.campVisual(camp),roofHeight=(p.y+16-visual.top)*.4;
+      // The upper roof occupies the middle of the transparent sprite, not its empty upper corners.
+      obstacles.push({x:p.x-visual.width*.36-2,y:visual.top-2,w:visual.width*.72+4,h:roofHeight+2},
+        {x:p.x-visual.width/2-2,y:visual.top+roofHeight,w:visual.width+4,h:p.y+18-visual.top-roofHeight});
       this.ctx.font=CAMP_COUNT_FONT;
       const countWidth=Math.max(34,Math.ceil(this.ctx.measureText(String(camp.garrison)).width)+14);
       obstacles.push({x:p.x-countWidth/2-26,y:p.y+13,w:countWidth+26,h:22});
       const status=(value:string,y:number,size:number,symbol=false)=>{this.ctx.font=`600 ${size}px sans-serif`;const width=this.ctx.measureText(value).width+(symbol?14:6);obstacles.push({x:p.x-width/2,y:y-size/2-2,w:width,h:size+4});};
       const {stop,drum}=statuses.get(camp.id)!;
-      if(stop)status(stop,p.y-39,11,true);
-      if(drum)status(drum,p.y-(stop?54:39),11,true);
+      if(stop)status(stop,visual.top-9,11,true);
+      if(drum)status(drum,visual.top-(stop?24:9),11,true);
       if(camp.owner==='P'&&camp.id===alert.campId)status('末城受袭',p.y+45,11);
       if(showUpgrade&&(!selected||selected.id===camp.id)&&camp.owner==='P'&&camp.tier<3&&camp.garrison>=UPGRADE[camp.tier as 1|2].threshold){
         const scale=Math.max(20,30*k)/28,width=camp.tier===1?46:58,height=camp.tier===1?38:48;
@@ -581,7 +581,8 @@ export class GameView {
       const p=this.point(camp),active=camp.id===this.selected||camp.id===this.gesture?.source;
       if(alert.campId===camp.id&&alert.emphasized&&!s.profile?.settings.reducedMotion){this.ctx.strokeStyle=COLORS.enemy1;this.ctx.lineWidth=3;this.ctx.strokeRect(p.x-31,p.y-32,62,69);}
       if(active){this.ctx.strokeStyle=COLORS.player;this.ctx.lineWidth=2.5;this.ctx.beginPath();this.ctx.arc(p.x,p.y,29,0,Math.PI*2);this.ctx.stroke();}
-      actors.push({depth:p.y+16,draw:()=>building(this.ctx,p.x,p.y-6,Math.max(20,30*k),camp.type,camp.tier,camp.owner,towerAims.get(camp.id))});
+      const visual=this.campVisual(camp);
+      actors.push({depth:p.y+16,draw:()=>building(this.ctx,p.x,visual.y,visual.size,camp.type,camp.tier,camp.owner,towerAims.get(camp.id))});
     }
     for(const [armyIndex,{army:a,point:p,march}] of moving.entries()){
       actors.push({depth:p.y+9,draw:()=>{
@@ -611,8 +612,9 @@ export class GameView {
       if(departure&&camp.owner)departureAccent(this.ctx,p.x,p.y,this.point(departure.target),camp.owner,departure.age*160/450);
       campPennant(this.ctx,p.x,p.y+24,camp.garrison,camp.owner,active,camp.tier);
       const {stop,drum}=statuses.get(camp.id)!;
-      if(stop)statusText(stop,p.x,p.y-39,11,'#F6E7C7','feint');
-      if(drum)statusText(drum,p.x,p.y-(stop?54:39),11,COLORS.player,'mobilize');
+      const visual=this.campVisual(camp);
+      if(stop)statusText(stop,p.x,visual.top-9,11,'#F6E7C7','feint');
+      if(drum)statusText(drum,p.x,visual.top-(stop?24:9),11,COLORS.player,'mobilize');
       if(camp.owner==='P'&&camp.id===alert.campId){
         const threat=b.armies.some(a=>a.targetId===camp.id&&a.faction!==camp.owner);
         if(threat)statusText('末城受袭',p.x,p.y+45,11,COLORS.enemy1);
@@ -641,8 +643,9 @@ export class GameView {
       const tier=camp.tier,matchId=b.id;
       this.regions.push({id,label:`升级${CAMP_CONFIG[camp.type].name}，消耗 ${UPGRADE[tier as 1|2].cost} 兵`,...r,run:()=>this.commitUpgrade(campId,tier,matchId)});
     }
-    const fy=h-bottom-footer;
-    this.ctx.fillStyle=preview||MAPS[b.mapId].tutorial?'#D7C5A1F2':'#302A23F5';this.ctx.fillRect(0,fy,w,footer+bottom);this.ctx.fillStyle='#A18A5E';this.ctx.fillRect(0,fy,w,2);
+    const fy=h-bottom-footer,lift=fieldOrderLift(h,top,bottom);
+    if(preview||MAPS[b.mapId].tutorial){this.ctx.fillStyle='#D7C5A1F2';this.ctx.fillRect(0,fy,w,footer+bottom);}
+    else drawFieldOrderRack(this.ctx,w,fy-lift,h);
     if(preview){
       this.text(`派 ${preview.sent} · 留 ${preview.retained}`,20,fy+22,15,COLORS.ink,550);
       const digits=(preview.normalMs/1000).toFixed(2)===(preview.travelMs/1000).toFixed(2)?3:2;
@@ -654,11 +657,11 @@ export class GameView {
       else if(preview.valid&&preview.volleyDamage!==null)this.text(`齐射按本队人数取整 · 当前预计 ${preview.volleyDamage} 兵`,20,fy+63,11,COLORS.muted);
     }else if(this.card){
       const target=g&&!g.region?this.campAt(g.point.x,g.point.y):null;
-      this.box(8,fy-44,w-16,44,'#FFFCF3F2',18);
-      this.regions.push({id:'card-hint',label:'用策提示',x:8,y:fy-44,w:w-16,h:44,run:()=>{}});
+      this.box(8,fy-lift-44,w-16,44,'#E9DDC4F2',3);
+      this.regions.push({id:'card-hint',label:'用策提示',x:8,y:fy-lift-44,w:w-16,h:44,run:()=>{}});
       const hint=this.card==='march'?'拖兵出征 · 提速40%':target?cardTargetPreview(b,this.card,target).message:this.card==='feint'?'点敌营 · 停产停射4秒':this.card==='mobilize'?'点己营 · 短时加快征兵':'点己营 · 补6兵';
-      this.text(hint,20,fy-22,w<350?12:13,COLORS.ink,550);
-      this.iconButton('cancel-card','取消',w-56,fy-44,44,'close',()=>this.cancel());
+      this.text(hint,20,fy-lift-22,w<350?12:13,COLORS.ink,550);
+      this.iconButton('cancel-card','取消',w-56,fy-lift-44,44,'close',()=>this.cancel());
       this.battleCards(fy);
     }else if(MAPS[b.mapId].tutorial){
       const upgradeCue=b.mapId==='L02'&&!selected?b.camps.find(c=>c.owner==='P'&&c.tier===1&&c.garrison>=UPGRADE[1].threshold):null;
@@ -671,10 +674,10 @@ export class GameView {
     this.nightPanel=nightPanel;
   }
   private battleCards(fy:number):void{
-      const s=this.session,b=s.match!.battle,w=this.viewport.width,inv=factionOf(b,'P')!.inventory,bw=(w-40)/4;
+      const s=this.session,b=s.match!.battle,w=this.viewport.width,inv=factionOf(b,'P')!.inventory,bw=(w-40)/4,lift=fieldOrderLift(this.viewport.height,this.viewport.top,this.viewport.bottom);
       for(const [i,id]of ACTIVE_IDS.entries()){
         const unlocked=s.profile!.unlockedCardIds.includes(id),label=`${CARDS[id].short} ${unlocked?count(inv[id]):'锁'}`;
-        this.orderButton(id,label,14+i*(bw+4),fy+9,bw,()=>{
+        this.orderButton(id,label,14+i*(bw+4),fy+9-lift,bw,()=>{
           this.selected=null;if(!unlocked){this.notify(`通关 ${MAPS[CARDS[id].lesson].name} 解锁`);return;}if(inv[id]<1){this.notify('暂无库存，获胜后可选择获得');return;}this.inputVersion++;this.card=this.card===id?null:id;
         });
       }

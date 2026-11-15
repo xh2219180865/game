@@ -99,9 +99,16 @@ export function drawBattlefieldLandforms(ctx:CanvasRenderingContext2D,plan:Battl
   const snow=mapId==='A02'||mapId==='L02',sand=mapId==='A03'||mapId==='L03',s=plan.scale;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   if(plan.river){const r=plan.river;
-    riverBand(ctx,r,r.width/2+r.bank+2*s,snow?'#353C3B50':'#211D1940');
-    riverBand(ctx,r,r.width/2+r.bank,snow?'#7C847B60':sand?'#806D5060':'#635B4460');
-    riverBand(ctx,r,r.width/2,snow?'#3A4748BA':sand?'#4A4B39AD':'#394039AD');
+    riverBand(ctx,r,r.width/2+r.bank+2*s,snow?'#353C3B35':'#38352A25');
+    riverBand(ctx,r,r.width/2+r.bank,snow?'#7C847B50':sand?'#96826152':'#8C836252');
+    riverBand(ctx,r,r.width/2,snow?'#687C7EAD':sand?'#73765BAD':'#63766FAD');
+    riverBand(ctx,r,r.width*.30,snow?'#7C969545':'#8A9C8740');
+    // Fine still-water strokes stay within the certified channel, below real crossing decks.
+    ctx.lineWidth=.65*s;ctx.strokeStyle=snow?'#DAE5D92C':'#DEE0B92C';ctx.beginPath();
+    for(let i=1;i<r.points.length-1;i++)for(const side of [-1,1]){
+      const p=r.points[i]!,shift=Math.sin(i*2.7+side)*3*s,yy=p.y+side*r.width*.19;
+      ctx.moveTo(p.x-5*s+shift,yy);ctx.quadraticCurveTo(p.x+shift,yy+.8*s,p.x+(3+i%4)*s+shift,yy);
+    }ctx.stroke();
     // Broken reflections replace the full-length light stripe; the river's planned path stays intact.
     ctx.lineWidth=2.4*s;ctx.strokeStyle=snow?'#8D9B9429':'#A3A58B20';ctx.beginPath();
     for(let i=2;i<r.points.length-2;i+=3){const p=r.points[i]!,offset=Math.sin(i*1.7)*r.width*.13;ctx.moveTo(p.x-5*s,p.y+offset);ctx.lineTo(p.x+3*s,p.y+offset+.5*s);}ctx.stroke();

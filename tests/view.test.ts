@@ -11,6 +11,7 @@ import { armyPosition, distance } from '../src/core/geometry.ts';
 import { dispatchPreview } from '../src/render/battle-presentation.ts';
 import { SLOT_KEYS } from '../src/app/storage.ts';
 import { asNumber, fraction } from '../src/core/fraction.ts';
+import { fieldOrderLift } from '../src/render/battlefield-ui.ts';
 import { CAMP_CONFIG, TIER_RATE, campCapacity, productionRate } from '../src/core/config.ts';
 import { createStatePressure } from './pressure-fixture.ts';
 import { createMixedPressure } from './mixed-pressure-fixture.ts';
@@ -1491,7 +1492,7 @@ test('S03: pause retains full-size camp and march positions while its backdrop r
     d.ctx.translate=(x,y)=>{shifts.push({x,y});};d.labels.length=0;d.statuses.length=0;v.draw(101);
     assert.ok(d.labels.includes('已暂停'));assert.deepEqual((v as unknown as {board:unknown}).board,originalBoard);
     const b=s.match!.battle,{x:ox,y:oy,k}=originalBoard;
-    for(const c of b.camps){assert.ok(shifts.some(p=>Math.abs(p.x-(ox+c.x*k))<.001&&Math.abs(p.y-(oy+c.y*k-6))<.001));assert.ok(d.labels.includes(String(c.garrison)));}
+    for(const c of b.camps){assert.ok(shifts.some(p=>Math.abs(p.x-(ox+c.x*k))<.001&&Math.abs(p.y-(oy+c.y*k+16-22*Math.max(20,30*k)*1.12/28))<.001));assert.ok(d.labels.includes(String(c.garrison)));}
     for(const a of b.armies){const p=armyPosition(a,b.gameMs);assert.ok(shifts.some(q=>Math.abs(q.x-(ox+p.x*k))<.001&&Math.abs(q.y-(oy+p.y*k))<.001));}
     assert.ok(!v.regions.some(r=>r.id==='pause'||r.id.startsWith('card-')||r.id==='upgrade'));
     v.down(70,6,height!/2);v.move(70,width!-6,height!/2);v.up(70,width!-6,height!/2);s.tick(5000);v.draw(10000);await idle(s);
@@ -1559,7 +1560,8 @@ test('T2: valid fire-strategy and dispatch target rings stay below buildings and
     d.ctx.beginPath=()=>{ringPath=false;};
     d.ctx.ellipse=(x,y,rx,ry)=>{ringPath=Math.abs(x-tx)<1e-8&&Math.abs(y-(ty+9))<1e-8&&rx===32&&ry===18;};
     d.ctx.stroke=()=>{if(ringPath){assert.equal(d.ctx.strokeStyle,COLORS.player,'the target is legal');order.push('ground-ring');}originalStroke.call(d.ctx);};
-    d.ctx.translate=(x,y)=>{if(Math.abs(x-tx)<1e-8&&Math.abs(y-(ty-6))<1e-8)order.push('building');};
+    const buildingY=(v as unknown as {campVisual(c:typeof target):{y:number}}).campVisual(target).y;
+    d.ctx.translate=(x,y)=>{if(Math.abs(x-tx)<1e-8&&Math.abs(y-buildingY)<1e-8)order.push('building');};
     d.ctx.fillText=(text,x,y)=>{if(text===String(target.garrison)&&Math.abs(x-tx)<1e-8&&Math.abs(y-(ty+24.5))<1e-8)order.push('count');originalText.call(d.ctx,text,x,y);};
     if(mode==='feint'){v.regions.find(r=>r.id==='card-feint')!.run();assert.equal(v.card,'feint');}
     else{v.down(89,...point('A01-P1'));v.move(89,tx,ty);}
@@ -1586,7 +1588,8 @@ test('T2: a real 300 ms departure follows ground depth and stays below authorita
     const headIndex=events.findLastIndex(e=>e.kind==='translate'&&close(e.x,head.x)&&close(e.y,head.y));assert.ok(headIndex>=0);
     for(const camp of current.camps){
       const x=board.x+camp.x*board.k,y=board.y+camp.y*board.k;
-      const buildingIndex=events.findIndex(e=>e.kind==='translate'&&close(e.x,x)&&close(e.y,y-6));
+      const buildingY=(v as unknown as {campVisual(c:typeof camp):{y:number}}).campVisual(camp).y;
+      const buildingIndex=events.findIndex(e=>e.kind==='translate'&&close(e.x,x)&&close(e.y,buildingY));
       const countIndex=events.findIndex(e=>e.kind==='text'&&e.text===String(camp.garrison)&&close(e.x,x)&&close(e.y,y+24.5));
       assert.ok(buildingIndex>=0);
       assert.equal(buildingIndex<headIndex,y+16<=head.y+9,'roofs occlude only soldiers behind their ground contact');
@@ -1604,14 +1607,15 @@ test('T2: cavalry queries format the new 33.60 base speed without changing movem
   assert.equal(b.ruleRevision,'1.6');assert.ok(d.labels.includes('速度：基础 33.60 → 33.60/秒'));assert.ok(!d.labels.some(text=>text.includes('33.5999')));assert.equal(JSON.stringify(b),before);
 });
 
-test('U05 H17: the light battle reserves only 52 top and 72 bottom pixels without resizing roads during selection',async()=>{
+test('U05 H17: larger field orders keep the board fixed and remain above the safe bottom during selection',async()=>{
   for(const [width,height]of [[320,568],[375,812],[430,932]]){
     const {s,v,d}=await readyCards();v.viewport={width:width!,height:height!,top:16,bottom:12};
-    const fills:{y:number;h:number}[]=[];d.ctx.fillRect=(x,y,w,h)=>{if(x===0&&w===width&&d.ctx.fillStyle==='#302A23F5')fills.push({y,h});};
     d.labels.length=0;v.draw(0);const board=structuredClone((v as unknown as {board:{x:number;y:number;k:number}}).board);
     assert.equal(board.k,Math.min((width!-16)/360,(height!-16-12-124)/540));
     assert.ok(board.y>=68&&board.y+540*board.k<=height!-12-72);
-    assert.deepEqual(fills.at(-1),{y:height!-12-72,h:84});
+    const orders=v.regions.filter(r=>r.id.startsWith('card-')),lift=fieldOrderLift(height!,16,12);
+    assert.equal(orders.length,4);
+    for(const r of orders){assert.equal(r.y,height!-12-72+9-lift);assert.equal(r.h,56+lift);assert.ok(r.y+r.h<=height!-12);}
     assert.deepEqual(v.regions.map(r=>r.id).sort(),['pause','card-mobilize','card-march','card-supply','card-feint'].sort());
     assert.ok(!d.labels.some(t=>/末城|行军军情|屯田|神速|扩营|沿路扩张/.test(t)));
     const snapshot=JSON.stringify(s.profile),source=campPoint(v,s,'A01-P1'),target=campPoint(v,s,'A01-N2');
@@ -1687,7 +1691,7 @@ test('drag-only target tolerance matches the preview, accepts a near miss and ca
   for(const [width,height]of [[320,568],[375,812],[430,932]])for(const offset of [6,12]){
     const {s,v,d}=await readyCards();v.viewport={width:width!,height:height!,top:16,bottom:12};v.draw(0);
     const source=campPoint(v,s,'A01-P1'),target=campPoint(v,s,'A01-N4');
-    const board=(v as unknown as {board:{k:number}}).board,scale=Math.max(20,30*board.k)/28;
+    const board=(v as unknown as {board:{k:number}}).board,scale=Math.max(20,30*board.k)*1.12/28;
     const edge=target[0]+Math.max(28,52*scale/2)+offset;
     v.down(101,...source);v.move(101,edge,target[1]);d.labels.length=0;v.draw(1);
     assert.equal(d.labels.join('').includes('秒到达'),offset===6);

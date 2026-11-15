@@ -1,5 +1,9 @@
 # 战场材质与七策器物
 
+2026-11-15：战场地表重制为俯视开阔场地，母版为 [field-terrain-master.png](field-terrain-master.png)，使用 **内置 imagegen**；输入全文见 [field-terrain-prompt.json](field-terrain-prompt.json)。工具原始文件名 `exec-3d0479c3-3b1a-4160-8722-16be01650583.png`。此母版替代下文 terrain-master 的运行地表，但保留历史母版，不改营寨、军士和器物图集。
+
+运行导出：`uv run --with pillow==13.0.0 python artifacts/ui-direction-v2/battle-style/export-field-terrain.py`，只裁切、等比缩放与 JPEG 编码。结果为 `assets/art/field-{plains,snow,desert}.jpg`；精确尺寸、字节、SHA-256 在 [field-terrain-manifest.json](field-terrain-manifest.json)。Pillow 仅为制作工具，不进入项目依赖。图像不包含文字、道路或玩法对象，构建从清单取三张替换图，不同时携带旧地表。
+
 2026-11-13，依据用户要求，以现有首页 `assets/art/warfront-home.jpg` 为画风参照，使用 **内置 imagegen** 生成三张制作母版。当前文件是实际运行素材的来源，不是另一套页面概念稿。完整输入见 [image-prompts.json](image-prompts.json)；实际导出尺寸与 SHA-256 见 [export-manifest.json](export-manifest.json)，不能把提示词中的期望尺寸当作输出尺寸。
 
 | 母版 | 内置工具输出文件 | 用途 |

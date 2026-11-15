@@ -32,7 +32,7 @@ test('painted terrain: all six maps use stable environments without changing geo
       const camps=Object.freeze([Object.freeze({x:75,y:110}),Object.freeze({x:285,y:430})]);
       const before=JSON.stringify(camps);
       drawTerrain(ctx,width!,height!,camps,mapId!);
-      assert.equal(draws.length,1);assert.equal((draws[0]![0] as ArtImage).src,`assets/art/battlefield-${environment}.jpg`);
+      assert.equal(draws.length,1);assert.equal((draws[0]![0] as ArtImage).src,`assets/art/field-${environment}.jpg`);
       assert.deepEqual(draws[0]!.slice(5),[0,0,width,height]);
       assert.deepEqual(rectangles[0],[0,0,width,height]);
       assert.ok(rectangles.slice(1).every(r=>r[0]===0&&r[1]===0&&r[2]===32&&r[3]===40),'each added scenery vignette has its own local clip');

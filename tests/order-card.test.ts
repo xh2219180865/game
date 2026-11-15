@@ -30,13 +30,13 @@ const ids=['mobilize','march','supply','feint'] as const;
 
 test('field cards use the painted strategy objects without painting inventory or names',async()=>{
   await loaded();
-  for(const id of ids)for(const w of [60,70,83.75,97.5]){
-    const d=canvas();drawOrderCard(d.ctx,10,20,w,54,id,false,false,true);d.balanced();
-    const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,1);
-    assert.ok(images.every(c=>(c.args[0] as ArtImage).src==='assets/art/strategy-props.png'));
-    assert.ok(d.calls.some(c=>c.op==='rect'&&JSON.stringify(c.args)===JSON.stringify([14,38,w-8,32])),'illustration is clipped below the name slip');
+  for(const id of ids)for(const w of [60,70,83.75,97.5])for(const h of [54,92]){
+    const d=canvas();drawOrderCard(d.ctx,10,20,w,h,id,false,false,true);d.balanced();
+    const images=d.calls.filter(c=>c.op==='drawImage');assert.equal(images.length,2);
+    assert.deepEqual(images.map(c=>(c.args[0] as ArtImage).src),['assets/art/war-table.jpg','assets/art/strategy-props.png']);
+    assert.ok(d.calls.some(c=>c.op==='rect'&&JSON.stringify(c.args)===JSON.stringify([16,42,w-12,h-35])),'illustration stays between the live title and stock');
     assert.ok(d.calls.some(c=>c.op==='clip'));
-    assert.ok(d.calls.some(c=>c.op==='fillRect'&&c.args[1]===24&&c.args[3]===14),'reserves the upper name slip');
+    assert.ok(d.calls.some(c=>c.op==='fillRect'&&c.args[1]===25&&c.args[3]===16),'reserves the upper name slip');
     assert.ok(!d.calls.some(c=>c.op==='fillText'||c.op==='strokeText'));
   }
 });
@@ -49,7 +49,7 @@ test('selection remains geometric, pressing shifts the whole face, and unavailab
   drawOrderCard(unavailable.ctx,10,20,70,54,'supply',false,false,false);
   for(const d of [base,selected,pressed,unavailable])d.balanced();
   assert.ok(selected.calls.filter(c=>c.op==='lineTo').length>base.calls.filter(c=>c.op==='lineTo').length,'selection adds a check seal, not only a color difference');
-  const image=(d:ReturnType<typeof canvas>)=>d.calls.find(c=>c.op==='drawImage')!;
+  const image=(d:ReturnType<typeof canvas>)=>d.calls.find(c=>c.op==='drawImage'&&(c.args[0] as ArtImage).src==='assets/art/strategy-props.png')!;
   const origin=(d:ReturnType<typeof canvas>)=>d.calls.find(c=>c.op==='translate')!.args;
   assert.equal(Number(origin(pressed)[1]),Number(origin(base)[1])+2);
   assert.deepEqual(image(unavailable).args,image(base).args);

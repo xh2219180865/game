@@ -126,6 +126,10 @@ export class StableArmyLabels {
       {x:0,y:-50,anchor:0.5},{x:0,y:-62,anchor:0.5},{x:0,y:-74,anchor:0.5},
       {x:0,y:14,anchor:0.5},
       {x:14,y:14,anchor:0},{x:-14,y:14,anchor:1},
+      {x:32,y:-26,anchor:0},{x:-32,y:-26,anchor:1},
+      {x:32,y:-38,anchor:0},{x:-32,y:-38,anchor:1},
+      {x:24,y:-50,anchor:0},{x:-24,y:-50,anchor:1},
+      {x:24,y:-62,anchor:0},{x:-24,y:-62,anchor:1},
     ];
     const attempt=(item:typeof items[number],offset:ArmyLabelOffset):boolean=>{
       if(![item.point.x,item.point.y,item.width,bounds.x,bounds.y,bounds.w,bounds.h,bounds.x+bounds.w,bounds.y+bounds.h].every(Number.isFinite)||item.width<=0||item.width>bounds.w||bounds.h<24)return false;
